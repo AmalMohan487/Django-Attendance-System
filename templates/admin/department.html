@@ -1,0 +1,140 @@
+{% extends 'admin/adminindex.html' %}
+{% block content %}
+<style>
+    /* Ensure body padding to push content below fixed navbar */
+    body {
+        padding-top: 80px; /* Adjust according to navbar height */
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+    }
+
+    /* Department List Container */
+    .conta {
+        margin-top:50%;
+        width: 90%;
+        max-width: 1100px;
+        margin: 50px auto 20px; /* Added margin to keep it below navbar */
+        padding: 20px;
+        background-color: #e3f2fd; /* Light blue background */
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    /* Table Styling */
+    .conta table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Table Headers */
+    .conta th {
+        height: 50px;
+        background-color: #007bff;
+        color: white;
+        text-align: center;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    /* Table Cells */
+    .conta td {
+        height: 45px;
+        text-align: center;
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        font-size: 16px;
+    }
+
+    /* Zebra Striping */
+    .conta tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    /* Hover Effect */
+    .conta tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* Button Styling */
+    .btn {
+        display: inline-block;
+        padding: 6px 12px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: bold;
+        border-radius: 5px;
+        transition: 0.3s;
+    }
+
+    .edit-btn {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .delete-btn {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn:hover {
+        opacity: 0.8;
+    }
+
+    /* Add Department Button */
+    .add-btn {
+        display: block;
+        width: fit-content;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+
+    .add-btn:hover {
+        background-color: #0056b3;
+    }
+
+</style>
+
+<!-- Department List -->
+<div class="conta">
+    <h2>Department List</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.code }}</td>
+                <td>
+                    <a href="{% url 'edit_department' item.id %}" class="btn edit-btn">✏️ Edit</a>
+                    <a href="{% url 'delete_department' item.id %}" class="btn delete-btn" onclick="return confirm('Are you sure to delete?');">🗑️ Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No departments available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'adddepartment' %}" class="add-btn">➕ Add Department</a>
+</div>
+
+{% endblock %}

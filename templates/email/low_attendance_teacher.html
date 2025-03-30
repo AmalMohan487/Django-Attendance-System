@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Low Attendance Alert</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: auto;
+        }
+        h2 {
+            color: #d9534f;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #d9534f;
+            color: white;
+        }
+        p {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Student Low Attendance Alert</h2>
+        <p>Hello {{ teacher_name }},</p>
+        <p>The following students in your assigned subjects have attendance below 75%:</p>
+
+        <table>
+            <tr>
+                <th>Student Name</th>
+                <th>Reg. No.</th>
+                <th>Subject</th>
+                <th>total</th>
+                <th>atte</th>
+
+                <th>Attendance (%)</th>
+            </tr>
+            {% for student in students_info %}
+            <tr>
+                <td>{{ student.student_name }}</td>
+                <td>{{ student.reg_no }}</td>
+                <td>{{ student.subject }}</td>
+                <td>{{ student.total_classes }}</td>
+                <td>{{ student.attended_classes }}</td>
+                <td>{{ student.attendance_percentage }}%</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <p>Please take the necessary actions to ensure student attendance improves.</p>
+        <p>Regards,<br><strong>University Administration</strong></p>
+    </div>
+</body>
+</html>

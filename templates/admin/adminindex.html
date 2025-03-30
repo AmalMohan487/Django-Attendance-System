@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <!-- Font Awesome (Local Static) -->
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.css' %}">
+
+    <style>
+        /* Reset and General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #15599c;
+            padding: 10px 20px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .logo img {
+            height: 50px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+        }
+
+        .nav-links li {
+            margin-right: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .nav-links a:hover {
+            color: #d9d9d9;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-color: rgba(238, 247, 255, 0.925);
+            margin-top: 70px; /* Offset for navbar */
+            margin-bottom: 50px; /* Offset for footer */
+        }
+
+        /* Grid Container */
+        .cont {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .cont a {
+            text-decoration: none;
+            color: blue;
+        }
+
+        .cont a:hover {
+            color: white;
+        }
+
+        /* Grid Items */
+        .list {
+            background: white;
+            text-align: center;
+            padding: 50px;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            transition: background 0.3s ease-in-out, transform 0.2s;
+            cursor: pointer;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .list i {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .list:hover {
+            background-color: rgba(108, 185, 248, 0.808);
+            transform: scale(1.05);
+        }
+
+        /* Hover Text */
+        .list span {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .list:hover span {
+            opacity: 1;
+        }
+
+        /* Footer */
+        footer {
+            width: 100%;
+            height: 50px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background: #003366;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 14px;
+        }
+
+        /* Responsive: 2 Columns */
+        @media (max-width: 768px) {
+            .cont {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Responsive: 1 Column */
+        @media (max-width: 500px) {
+            .cont {
+                grid-template-columns: repeat(1, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="AMBR Logo">
+        </div>     
+        <ul class="nav-links">
+            <li><a href="{% url 'AdminIndex' %}">Home</a></li>
+            <li><a href="{% url 'over' %}">End Semester </a></li>
+            <li><a href="{% url 'user_logout' %}">Logout</a></li>
+        </ul>
+    </nav>
+    {% block content %}
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="cont">
+            <a href="{% url 'Dept' %}">
+                <div class="list">
+                    <i class="fas fa-building"></i>
+                    <span>Department</span>
+                </div>
+            </a>
+            <a href="{% url 'view_students' %}">
+                <div class="list">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>Students</span>
+                </div>
+            </a>
+            <a href="{% url 'admin_view_teachers' %}">
+                <div class="list">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>Teachers</span>
+                </div>
+            </a>
+            <a href="{% url 'subject_list' %}">
+                <div class="list">
+                    <i class="fas fa-book"></i>
+                    <span>Subjects</span>
+                </div>
+            </a>
+            <a href="{% url 'select_department_semester' %}">
+                <div class="list">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Attendance Report</span>
+                </div>
+            </a>  
+            <a href="{% url 'Asub' %}">
+                <div class="list">
+                    <i class="fas fa-tasks"></i>
+                    <span>Assign Subject</span>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% endblock %}
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Attendance Management System</p>
+    </footer>
+
+</body>
+</html>

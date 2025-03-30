@@ -1,0 +1,45 @@
+<script>
+  document.getElementById("attendance_date").addEventListener("change", function() {
+      let selectedDate = this.value.split("-").reverse().join("/");  // Convert YYYY-MM-DD to DD/MM/YYYY
+      window.location.href = window.location.pathname + "?date=" + selectedDate;
+  });
+  
+  document.getElementById("submitAttendance").addEventListener("click", function() {
+      let dateInput = document.getElementById("attendance_date").value;
+      if (!dateInput) {
+          alert("Please select a date.");
+          return;
+      }
+  
+      let formattedDate = dateInput.split("-").reverse().join("/");  // Convert YYYY-MM-DD to DD/MM/YYYY
+  
+      let attendanceData = [];
+      document.querySelectorAll(".attendance-checkbox:checked:not(:disabled)").forEach(function(checkbox) {
+          attendanceData.push({
+              student_id: checkbox.getAttribute("data-student"),
+              period: checkbox.getAttribute("data-period"),
+              teacher_id: checkbox.getAttribute("data-teacher"),
+              semester_id: checkbox.getAttribute("data-semester"),
+              department_id: checkbox.getAttribute("data-department"),
+              subject_id: checkbox.getAttribute("data-subject"),
+              date: formattedDate
+          });
+      });
+  
+      fetch("{% url 'mark_attendance' %}", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}"
+          },
+          body: JSON.stringify({ attendance_data: attendanceData, date: formattedDate })
+      })
+      .then(response => response.json())
+      .then(data => {
+          alert(data.message);
+          location.href = window.location.pathname + "?date=" + formattedDate;
+      })
+      .catch(error => console.error("Error:", error));
+  });
+  </script>
+  

@@ -1,0 +1,168 @@
+{% extends 'admin/adminindex.html' %}
+{% block content %}
+<div class="container">
+        <!-- Page Header -->
+        <h2 class="text-center mb-4 text-white py-3 rounded header-title">🎓 Student Management</h2>
+
+        <!-- Pending Approval Button -->
+        <div class="text-center mb-4">
+            <a href="{% url 'pending_students' %}" class="btn btn-warning btn-lg fw-bold shadow">
+                🔍 View Pending Approvals
+            </a>
+        </div>
+
+        <!-- Search Bar -->
+        <form method="GET" action="{% url 'view_students' %}" class="mb-4 d-flex justify-content-center">
+            <input type="text" name="reg_no" class="form-control search-bar me-2" placeholder="🔎 Search by Registration Number..." value="{{ query }}">
+            <button type="submit" class="btn btn-primary search-btn">Search</button>
+        </form>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Reg No</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Semester</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student.reg_no }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.department.name }}</td>
+                    <td>{{ student.semester.name }}</td>
+                    <td>
+                        <a href="{% url 'delete_user' 'student' student.id %}" class="btn btn-danger btn-sm delete-btn"
+                        onclick="return confirm('Are you sure you want to delete this student?')">
+                        ❌ Delete
+                    </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="no-data">⚠️ No students found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+/* General Styles */
+.container {
+    max-width: 100%;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 80px; /* Push content down below navbar */
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Table Wrapper for Responsiveness */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+}
+
+/* Table Styles */
+table {
+    width: 90%;
+    border-collapse: collapse;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: white;
+}
+th, td {
+    padding: 12px;
+    text-align: center;
+    border: 1px solid #ddd;
+    word-wrap: break-word;
+}
+th {
+    background-color: #007bff;
+    color: white;
+    font-size: 16px;
+}
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+.no-data {
+    text-align: center;
+    font-weight: bold;
+    color: #777;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-block;
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+.approve {
+    background-color: #28a745;
+    color: white;
+}
+.reject {
+    background-color: #dc3545;
+    color: white;
+}
+.btn:hover {
+    opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .table-container {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+    }
+    tr {
+        margin-bottom: 15px;
+        border-bottom: 2px solid #ddd;
+    }
+    th {
+        display: none; /* Hide table headers */
+    }
+    td {
+        text-align: left;
+        padding: 10px;
+        position: relative;
+    }
+    td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+        color: #007bff;
+    }
+    .btn {
+        display: block;
+        text-align: center;
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+</style>
+
+{% endblock %}

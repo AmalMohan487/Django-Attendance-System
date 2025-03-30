@@ -1,0 +1,217 @@
+{% extends 'admin/adminindex.html' %}
+
+{% block content %}
+<style>/* General container styling */
+
+
+    .container {
+        max-width: 90%;
+        margin: 100px auto 20px auto; /* 150px from the top */
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
+.title {
+    text-align: center;
+    color: #333;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Form Styling */
+.form-section {
+    background: #e9ecef;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.select-box {
+    width: 50%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+.btn {
+    background: #007BFF;
+    color: white;
+    padding: 12px 18px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: background 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn:hover {
+    background: #0056b3;
+}
+
+/* Back Button */
+.back-section {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.back-btn {
+    display: inline-block;
+    background: #dc3545;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.back-btn:hover {
+    background: #a71d2a;
+}
+
+/* Report Table */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.report-table th, .report-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.report-table th {
+    background-color: #007BFF;
+    color: white;
+}
+
+.eligible {
+    color: green;
+    font-weight: bold;
+}
+
+.not-eligible {
+    color: red;
+    font-weight: bold;
+}
+
+.download-section {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.download-btn {
+    background: #28a745;
+    color: white;
+    padding: 12px 18px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+.download-btn:hover {
+    background: #218838;
+}
+
+/* Responsive Table */
+.table-container {
+    width: 100%;
+    overflow-x: auto; /* Enables horizontal scrolling */
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.report-table th, .report-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.report-table th {
+    background-color: #007BFF;
+    color: white;
+}
+
+/* Make table scrollable on smaller screens */
+@media screen and (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .report-table th, .report-table td {
+        padding: 8px;
+        font-size: 14px; /* Reduce font size */
+    }
+
+    .report-table th {
+        white-space: nowrap; /* Prevents text wrapping in headers */
+    }
+}
+
+</style>
+<div class="container">
+    <h2 class="title">Report for Semester {{ selected_semester }}</h2>
+
+    <!-- Back Button -->
+    <div class="back-section">
+        <a href="{% url 'select_department_semester' %}" class="btn back-btn">← Change Selection</a>
+    </div>
+    <div class="download-section">
+        <a href="{% url 'download_attendance_report' selected_department selected_semester %}" class="btn download-btn">📥 Download PDF</a>
+    </div>
+
+    <!-- Display Report -->
+    {% if report_data %}
+    <div class="report-section">
+        <div class="table-container">
+            <table class="report-table">
+                <tr>
+                    <th>Student Name</th>
+                    <th>Reg No</th>
+                    <th>Subject</th>
+                    <th>Attendance Percentage</th>
+                    <th>Eligibility</th>
+                </tr>
+                {% for student in report_data %}
+                <tr>
+                    <td rowspan="{{ student.subjects|length }}">{{ student.name }}</td>
+                    <td rowspan="{{ student.subjects|length }}">{{ student.reg_no }}</td>
+                    {% for subject in student.subjects %}
+                    <td>{{ subject.subject_name }}</td>
+                    <td>{{ subject.attendance_percentage }}%</td>
+                    <td class="{% if subject.eligibility == 'Eligible' %}eligible{% else %}not-eligible{% endif %}">
+                        {{ subject.eligibility }}
+                    </td>
+                </tr>
+                {% if not forloop.last %}<tr>{% endif %}
+                {% endfor %}
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <p class="no-data">No data available for this selection.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Sheet with Preview</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+    h3,input {
+      width: 100%;
+      padding: 4px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: .1px solid rgb(139, 133, 133);
+      
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    .btn {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+    .preview {
+      padding: 15px;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Attendance Sheet</h2>
+
+  <!-- Attendance Inputs -->
+  <label for="date">Date:</label>
+  <input type="date" id="date">
+
+  <label for="semester">Semester:</label>
+  <h3 class="hallo ">xlgxwu</h3>
+
+  <label for="department">Department:</label>
+  <h3 class="hallo ">xlgxwu</h3>
+
+  <label for="subject">Subject:</label>
+  <h3 class="hallo ">xlgxwu</h3>
+
+  <!-- Attendance Table -->
+  <table>
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Period 1</th>
+        <th>Period 2</th>
+        <th>Period 3</th>
+        <th>Period 4</th>
+        <th>Period 5</th>
+        <th>Period 6</th>
+        <th>Period 7</th>
+      </tr>
+    </thead>
+    <tbody id="studentTable">
+      <tr>
+        <td>John Doe</td>
+        <td><input type="checkbox" class="attendance" data-name="John Doe" data-period="1"></td>
+        <td><input type="checkbox" class="attendance" data-name="John Doe" data-period="2"></td>
+        <td><input type="checkbox" class="attendance" data-name="John Doe" data-period="3"></td>
+        <td><input type="checkbox" class="attendance" data-name="John Doe" data-period="4"></td>
+        <td><input type="checkbox" class="attendance" data-name="John Doe" data-period="5"></td>
+        <td><input type="checkbox" class="attendance" data-name="John Doe" data-period="6"></td>
+        <td><input type="checkbox" class="attendance" data-name="John Doe" data-period="7"></td>
+      </tr>
+      <tr>
+        <td>Jane Smith</td>
+        <td><input type="checkbox" class="attendance" data-name="Jane Smith" data-period="1"></td>
+        <td><input type="checkbox" class="attendance" data-name="Jane Smith" data-period="2"></td>
+        <td><input type="checkbox" class="attendance" data-name="Jane Smith" data-period="3"></td>
+        <td><input type="checkbox" class="attendance" data-name="Jane Smith" data-period="4"></td>
+        <td><input type="checkbox" class="attendance" data-name="Jane Smith" data-period="5"></td>
+        <td><input type="checkbox" class="attendance" data-name="Jane Smith" data-period="6"></td>
+        <td><input type="checkbox" class="attendance" data-name="Jane Smith" data-period="7"></td>
+      </tr>
+      <!-- Add more students here -->
+    </tbody>
+  </table>
+
+  <button class="btn" onclick="previewAttendance()">Preview Attendance</button>
+
+  <!-- Preview Section -->
+  <div id="previewSection" class="preview" style="display: none;">
+    <h3>Attendance Preview</h3>
+    <p><strong>Date:</strong> <span id="previewDate"></span></p>
+    <p><strong>Semester:</strong> <span id="previewSemester"></span></p>
+    <p><strong>Department:</strong> <span id="previewDepartment"></span></p>
+    <p><strong>Subject:</strong> <span id="previewSubject"></span></p>
+    <h4>Attendance Details</h4>
+    <ul id="attendanceList"></ul>
+  </div>
+</div>
+
+<script>
+  function previewAttendance() {
+    // Get input values
+    document.getElementById('previewDate').innerText = document.getElementById('date').value;
+    document.getElementById('previewSemester').innerText = document.getElementById('semester').value;
+    document.getElementById('previewDepartment').innerText = document.getElementById('department').value;
+    document.getElementById('previewSubject').innerText = document.getElementById('subject').value;
+
+    // Get attendance data
+    const checkboxes = document.querySelectorAll('.attendance');
+    const list = document.getElementById('attendanceList');
+    list.innerHTML = '';
+
+    const attendanceData = {}; 
+
+    checkboxes.forEach(checkbox => {
+      const studentName = checkbox.getAttribute('data-name');
+      const period = checkbox.getAttribute('data-period');
+      const status = checkbox.checked ? 'Present' : 'Absent';
+
+      if (!attendanceData[studentName]) {
+        attendanceData[studentName] = {};
+      }
+      attendanceData[studentName][`Period ${period}`] = status;
+    });
+
+    for (const student in attendanceData) {
+      let attendanceText = `${student}: `;
+      for (const period in attendanceData[student]) {
+        attendanceText += `${period} - ${attendanceData[student][period]}, `;
+      }
+      const listItem = document.createElement('li');
+      listItem.textContent = attendanceText.slice(0, -2);
+      list.appendChild(listItem);
+    }
+
+    document.getElementById('previewSection').style.display = 'block';
+  }
+</script>
+
+</body>
+</html>

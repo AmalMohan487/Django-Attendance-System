@@ -1,0 +1,68 @@
+{% extends 'admin/adminindex.html' %}
+
+{% block content %}
+<style>
+    .center-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f8f9fa; /* Light gray background */
+    }
+    
+    .delete-box {
+        width: 400px;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .delete-box h2 {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+    
+    .delete-box button {
+        width: 100%;
+        padding: 10px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-bottom: 10px;
+    }
+    
+    .delete-box button:hover {
+        background-color: #c82333;
+    }
+    
+    .delete-box a {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        background-color: #6c757d;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+    
+    .delete-box a:hover {
+        background-color: #5a6268;
+    }
+    
+</style>
+<div class="center-container">
+    <div class="delete-box">
+        <h2>Are you sure you want to delete "{{ department.name }}"?</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit">Yes, Delete</button>
+        </form>
+        <a href="{% url 'Dept' %}">Cancel</a>
+    </div>
+</div>
+{% endblock %}

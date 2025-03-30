@@ -1,0 +1,59 @@
+{% extends 'admin/adminindex.html' %}
+
+{% block content %}
+<style>
+    .center-box {
+        width: 350px;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .center-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f8f9fa; /* Light gray background */
+    }
+    
+    .center-box input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+    }
+    
+    .center-box button {
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    
+    .center-box button:hover {
+        background-color: #0056b3;
+    }
+    
+
+</style>
+<div class="center-container">
+    <div class="center-box">
+        <h3>Edit Department</h3>
+        <form method="POST">
+            {% csrf_token %}
+            
+            <input type="text" name="name" placeholder="Name" value="{{ department.name }}" required>
+            <input type="text" name="code" placeholder="Code" value="{{ department.code }}" required>
+
+            <button type="submit">Save</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

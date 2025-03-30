@@ -1,0 +1,6 @@
+<h2>Select Semester</h2>
+<ul>
+  {% for semester in semesters %}
+    <li><a href="{% url 'mark_attendance' semester.id %}">{{ semester.name }}</a></li>
+  {% endfor %}
+</ul>

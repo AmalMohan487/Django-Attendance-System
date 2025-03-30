@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Warning</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: auto;
+        }
+        h2 {
+            color: #d9534f;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #d9534f;
+            color: white;
+        }
+        p {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Attendance Warning</h2>
+        <p>Hello {{ name }},</p>
+        <p>We are informing you that your attendance for the following subjects has fallen below 75%:</p>
+
+        <table>
+            <tr>
+                <th>Subject</th>
+                <th>Attendance (%)</th>
+                <th>Total Classes</th>
+                <th>Attended Classes</th>
+            </tr>
+            {% for subject in subjects %}
+            <tr>
+                <td>{{ subject.subject }}</td>
+                <td>{{ subject.attendance_percentage }}%</td>
+                <td>{{ subject.total_classes }}</td>
+                <td>{{ subject.attended_classes }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <p>If this continues, you will not be eligible for the regular exam.</p>
+        <p>Regards,<br><strong>University Administration</strong></p>
+    </div>
+</body>
+</html>

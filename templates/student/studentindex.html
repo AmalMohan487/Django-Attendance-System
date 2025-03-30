@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semester Selection</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/stdstyle.css' %}">
+
+    <script>
+        function toggleMenu() {
+            document.getElementById("nav-links").classList.toggle("active");
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".progress-circle").forEach(circle => {
+                let progress = parseFloat(circle.getAttribute("data-progress"));
+                let color;
+
+                if (progress > 90) {
+                    color = "#28a745"; // Green
+                } else if (progress < 65) {
+                    color = "#dc3545"; // Red
+                } else if (progress < 75) {
+                    color = "#ffa500"; // Light Orange
+                } else {
+                    color = "#6a11cb"; // Default Purple
+                }
+                circle.style.background = `conic-gradient(${color} ${progress}%, #ddd ${progress}%)`;
+            });
+        });
+    </script>
+    <style>
+        
+    </style>
+    <style>
+        /* Grid Layout */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: auto;
+            gap: 15px;
+            max-width: 100%;
+            margin: auto;
+            padding: 10px;
+            overflow-y: auto; /* Enable scrolling if needed */
+            max-height: 80vh; /* Prevent it from exceeding screen size */
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .grid-containe {
+               
+        
+                max-width: 100%;
+                margin: auto;
+                padding: 10px;
+                overflow-y: auto; /* Enable scrolling if needed */
+                max-height: 70vh;
+                margin-bottom: 500px; /* Prevent it from exceeding screen size */
+            }
+    
+            .add-btn {
+                position: fixed; /* Fixes the button at the bottom */
+                bottom: 70px; /* 20px above the bottom */
+                left: 50%;
+                transform: translateX(-50%);
+                background: #007bff;
+                color: white;
+                padding: 12px 24px;
+                border-radius: 25px;
+                text-decoration: none;
+                font-weight: bold;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+                transition: background 0.3s;
+                z-index: 1000; /* Ensures the button stays above other elements */
+            }
+            
+            .add-btn:hover {
+                background: #0056b3;
+            }
+            
+            .grid-container {
+                grid-template-columns: repeat(1, 1fr);
+            }
+        }
+
+        /* Attendance Card */
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            padding: 15px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 350px;
+            height: 150px;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            color: white;
+        }
+        
+
+
+        .container:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Subject Information */
+        .info {
+            width: 50%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            word-wrap: break-word; /* Break long words */
+            overflow-wrap: break-word; /* Ensure wrapping */
+        }
+
+        /* Subject Name */
+        .info h3 {
+            font-size: 14px;
+            font-weight: bold;
+            white-space: normal; /* Allow text to wrap */
+            overflow: hidden;
+            text-align: center;
+            max-width: 100%;
+            padding: 5px;
+        }
+
+        /* Circular Progress Graph */
+        .progress-container {
+            width: 40%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .progress-circle {
+            width: 140px; /* Slightly smaller */
+            height: 140px; /* Slightly smaller */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .inner-circle {
+            width: 120px; /* Adjusted proportionally */
+            height: 120px;
+            background: #ffffff;
+            color: black;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px; /* Adjusted text size */
+            font-weight: bold;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="Logo">
+        </div>     
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="{% url 'std' %}">Home</a></li>
+            <li><a href="{% url 'student_attendance_detail' %}">About</a></li>
+            <li><a href="{% url 'user_logout' %}">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="content">
+        {% block content %}
+
+        <div class="grid-container">
+            {% for data in attendance_data %}
+            <div class="container">
+                <div class="info">
+                    <h3>{{ data.subject_name }}</h3> <!-- Long names will break into new lines -->
+                    <p>Total Hours: <span>{{ data.total_hours }}</span></p>
+                    <p>Attended: <span>{{ data.attended_hours }}</span></p>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-circle" data-progress="{{ data.attendance_percentage }}">
+                        <div class="inner-circle">{{ data.attendance_percentage }}%</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <a href="{% url 'student_attendance_detail' %}" class="add-btn">Full Attendance</a>
+
+        {% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Attendance Management System</p>
+    </footer>
+
+</body>
+</html>

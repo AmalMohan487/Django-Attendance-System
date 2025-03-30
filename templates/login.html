@@ -1,0 +1,114 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block content %}
+<style>
+    /* Centering the Login Form */
+/* Centering the Login Form */
+.inputcontainer {
+   
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    margin: auto;
+    margin-top: 30vh; /* Adjusted to center properly */
+    background-color: #f8f9fa; /* Light background */
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Input Fields */
+.inputcontainer input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.inputcontainer input:hover {
+    background-color: #ffe4c4; /* Bisque */
+}
+
+/* Login Button */
+.inputcontainer button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 20px;
+    background-color: #183661;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.inputcontainer button:hover {
+    background-color: #1f8cea;
+    color: black;
+}
+
+/* Error Messages */
+.message {
+    color: red;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .inputcontainer {
+        margin-top: 20vh; /* Adjusted for smaller screens */
+    }
+}
+
+/* Navbar (Fixed at the Top) */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #15599c;
+    padding: 10px 20px;
+    color: white;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    transition: background 0.3s ease-in-out;
+    z-index: 1000;
+}
+
+/* Footer (Fixed at the Bottom) */
+footer {
+    background: #003366;
+    color: white;
+    padding: 15px 0;
+    text-align: center;
+    font-size: 14px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+</style>
+
+<!-- Login Section -->
+<div class="container d-flex justify-content-center " style="align-items: center;">
+    <div class="inputcontainer">
+        {% for message in messages %}
+            <h4 class="message">{{ message }}</h4>
+        {% endfor %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <h1>Login</h1>
+            <input type="text" name="uname" placeholder="Username" required><br><br>
+            <input type="password" name="pswd" placeholder="Password" required><br><br>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+python manage.py runcrons --force
+
+from attendance.models import check_and_send_attendance_warnings
+  # Adjust based on your model
+check_and_send_attendance_warnings.objects.all()

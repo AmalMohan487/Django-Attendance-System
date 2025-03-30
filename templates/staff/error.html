@@ -1,0 +1,7 @@
+{% block content %}
+  <div class="alert alert-danger" role="alert">
+    <h4>Error</h4>
+    <p>{{ message }}</p>
+    <a href="{% url 'select_semester' %}" class="btn btn-primary">Back to Semesters</a>
+  </div>
+{% endblock %}

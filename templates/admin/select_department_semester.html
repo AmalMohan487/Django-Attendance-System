@@ -1,0 +1,74 @@
+{% extends 'admin/adminindex.html' %}
+
+{% block content %}
+<style>
+    /* General Styling */
+/* Center the selection container */
+.selection-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 70vh; /* Adjust height to balance navbar and footer */
+    text-align: center;
+}
+
+/* Style the form */
+.selection-form {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    width: 50%;
+    min-width: 300px;
+}
+
+/* Style select boxes and buttons */
+.select-box {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.btn {
+    background: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: #0056b3;
+}
+
+
+</style>
+<div class="selection-container">
+    <h2>Select Department & Semester</h2>
+    <form method="post" action="{% url 'view_report_card' %}" class="form-container">
+        {% csrf_token %}
+        <label for="department">Select Department:</label>
+        <select name="department" id="department" class="select-box">
+            {% for dept in departments %}
+            <option value="{{ dept.id }}">{{ dept.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="semester">Select Semester:</label>
+        <select name="semester" id="semester" class="select-box">
+            {% for sem in semesters %}
+            <option value="{{ sem.id }}">Semester {{ sem.id }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn">View Report</button>
+    </form>
+</div>
+{% endblock %}

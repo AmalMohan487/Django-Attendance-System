@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+
+    <title>Login Page</title>
+    
+    <script>
+        function toggleMenu() {
+            document.getElementById("nav-links").classList.toggle("active");
+        }
+
+        // Change Navbar Background on Scroll
+        window.addEventListener("scroll", function() {
+            const navbar = document.querySelector(".navbar");
+            if (window.scrollY > 50) {
+                navbar.classList.add("scrolled");
+            } else {
+                navbar.classList.remove("scrolled");
+            }
+        });
+    </script>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="AMBR Logo">
+        </div>     
+           <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="#">Home</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Contact</a></li>
+        </ul>
+    </nav>
+    {% block content %}
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="sub-container">
+            <img src="{% static 'images/staff.png' %}" alt="Teacher">
+            <h2>Teacher Login</h2>
+            <a class="login-btn" href="{% url 'teacher_login' %}">Login</a>
+        </div>
+        <div class="sub-container">
+            <img src="{% static 'images/student.png' %}" alt="Student">
+            <h2>Student Login</h2>
+            <a class="login-btn" href="{% url 'student_login' %}">Login</a>
+        </div>
+    </div>
+    {% endblock %}
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Attendance Management System</p>
+    </footer>
+
+</body>
+</html>

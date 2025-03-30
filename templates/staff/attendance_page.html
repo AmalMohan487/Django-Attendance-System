@@ -1,0 +1,135 @@
+{% extends 'staff/teacherindex.html' %}
+
+{% block content %}
+
+<!-- Container to align content below navbar -->
+<div style="margin: 20px auto; max-width: 90%; padding: 20px;">
+
+    <!-- Attendance Header -->
+    <h2 style="text-align: center; color: #333; font-weight: bold;">Attendance for {{ semester.name }} - {{ department.name }}</h2>
+
+    <!-- Attendance Info Section -->
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; background: #f8f9fa; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px;">
+        <div style="flex: 1; min-width: 180px;">
+            <label style="font-weight: bold;">Teacher:</label>
+            <p>{{ teacher.name }}</p>
+        </div>
+        <div style="flex: 1; min-width: 180px;">
+            <label style="font-weight: bold;">Subject:</label>
+            <p>{{ subject.name }}</p>
+        </div>
+        <div style="flex: 1; min-width: 180px;">
+            <label style="font-weight: bold;">Semester:</label>
+            <p>{{ semester.name }}</p>
+        </div>
+        <div style="flex: 1; min-width: 180px;">
+            <label style="font-weight: bold;">Date:</label>
+            <input type="date" id="attendance_date" value="{{ selected_date|default:'' }}" required style="padding: 5px; width: 100%; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+        <div style="flex: 1; min-width: 180px;">
+            <label style="font-weight: bold;">Total Hours:</label>
+            <p>{{ total_hours}}</p>        </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div style="overflow-x: auto; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #007bff; color: white;">
+                    <th style="padding: 10px; text-align: left;">Student Name</th>
+                    {% for i in periods %}
+                        <th style="padding: 10px; text-align: center;">P{{ i }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">{{ student.name }}</td>
+                    {% for i in periods %}
+                    <td style="text-align: center; border-bottom: 1px solid #ddd;">
+                        <input type="checkbox" class="attendance-checkbox"
+                            data-student="{{ student.id }}"
+                            data-period="p{{ i }}"
+                            data-teacher="{{ teacher.id }}"
+                            data-semester="{{ semester.id }}"
+                            data-department="{{ department.id }}"
+                            data-subject="{{ subject.id }}"
+                            onchange="calculateTotalHours()"
+                            {% for record in attendance_records %}
+                                {% if record.student.id == student.id %}
+                                    {% if i == 1 and record.p1 %} checked disabled {% endif %}
+                                    {% if i == 2 and record.p2 %} checked disabled {% endif %}
+                                    {% if i == 3 and record.p3 %} checked disabled {% endif %}
+                                    {% if i == 4 and record.p4 %} checked disabled {% endif %}
+                                    {% if i == 5 and record.p5 %} checked disabled {% endif %}
+                                    {% if i == 6 and record.p6 %} checked disabled {% endif %}
+                                    {% if i == 7 and record.p7 %} checked disabled {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        >
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Submit Attendance Button -->
+    <div style="text-align: center; margin-top: 20px;">
+        <button id="submitAttendance" style="padding: 12px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 5px; font-size: 16px; font-weight: bold;">Submit Attendance</button>
+    </div>
+
+</div>
+
+<script>
+document.getElementById("attendance_date").addEventListener("change", function() {
+    let selectedDate = this.value;
+    window.location.href = window.location.pathname + "?date=" + selectedDate;
+});
+
+document.getElementById("submitAttendance").addEventListener("click", function() {
+    let date = document.getElementById("attendance_date").value;
+    if (!date) {
+        alert("Please select a date.");
+        return;
+    }
+
+    let attendanceData = [];
+    document.querySelectorAll(".attendance-checkbox:checked:not(:disabled)").forEach(function(checkbox) {
+        attendanceData.push({
+            student_id: checkbox.getAttribute("data-student"),
+            period: checkbox.getAttribute("data-period"),
+            teacher_id: checkbox.getAttribute("data-teacher"),
+            semester_id: checkbox.getAttribute("data-semester"),
+            department_id: checkbox.getAttribute("data-department"),
+            subject_id: checkbox.getAttribute("data-subject"),
+            date: date
+        });
+    });
+
+    fetch("{% url 'mark_attendance' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ attendance_data: attendanceData, date: date })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        location.href = window.location.pathname + "?date=" + date;
+    })
+    .catch(error => console.error("Error:", error));
+});
+
+// Function to calculate total hours
+function calculateTotalHours() {
+    let total = document.querySelectorAll(".attendance-checkbox:checked:not(:disabled)").length;
+    document.getElementById("total_hours").value = total;
+}
+</script>
+
+{% endblock %}

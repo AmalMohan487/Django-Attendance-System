@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+   
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HCET Website</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+    
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <img src="DALL·E 2025-02-16 18.33.06 - A sleek and modern logo design incorporating the letters 'A', 'M', and 'S' in an interlocking style. The letters should be arranged in a geometric, pr.webp" alt="Logo">
+            </div>
+            <div class="menu-toggle" onclick="toggleMenu()">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#others">Others</a></li>
+                <li><a href="{% url 'SignIn' %}">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+    {% block content %}
+    <main>
+        <section id="home">
+            <h1 style="text-align: center; margin-top: 20px;">Welcome to HCET</h1>
+        </section>
+        <div class="container">
+            <div class="sub-container">
+                <h2>Teacher Login</h2>
+                <a class="login-btn" href="{% url 'teacher_login' %}">Login<></a>
+            </div>
+            <div class="sub-container">
+                <h2>Student Login</h2>
+                <a class="login-btn" href="{% url 'register_student' %}">Login<></a>
+            </div>
+        </div>
+    </main>
+    {% endblock %}
+    <footer style="text-align: center; padding: 20px; background-color: #333; color: white;">
+        <p>&copy; 2025 HCET. All rights reserved.</p>
+    </footer>
+    
+    <script>
+        function toggleMenu() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

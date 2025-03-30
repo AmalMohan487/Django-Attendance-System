@@ -1,0 +1,216 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semester Selection</title>
+
+    <!-- Link to External CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tyle.css' %}">
+
+    <script>
+        function toggleMenu() {
+            document.getElementById("nav-links").classList.toggle("active");
+        }
+    </script>
+
+    <style>
+        /* General Styles */
+        body, h2 {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background: #f5f5f5;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #15599c;
+            padding: 15px 20px;
+            color: white;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .logo img {
+            height: 50px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+        }
+
+        .nav-links li {
+            margin-right: 55px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.3s ease-in-out;
+        }
+
+        .nav-links a:hover {
+            color: #d9d9d9;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Main Container */
+        .main-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 100px 20px 20px; /* Space for fixed navbar */
+        }
+
+        /* Semester Selection Box */
+        .selection-box {
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Semester Grid */
+        .semester-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            max-width: 700px;
+            margin-top: 15px;
+        }
+
+        .semester-list a {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            height: 80px; /* Consistent height */
+            transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        .semester-list a:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        /* Footer */
+        footer {
+            background: #003366;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 1024px) {
+            .selection-box {
+                width: 95%;
+            }
+
+            .semester-list {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+            
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                background: #003366;
+                position: absolute;
+                width: 100%;
+                left: 0;
+                top: 50px;
+                transition: max-height 0.3s ease-in-out;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links li {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="Logo">
+        </div>     
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="#">Home</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="{% url 'user_logout' %}">Logout</a></li>
+        </ul>
+    </nav>
+    <div style="height: 70px;"></div>
+    {% block content %}
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <div class="selection-box">
+            <h2>Select a Semester</h2>
+            <div class="semester-list">
+                {% for sem in semesters %}
+                    <a href="{% url 'attendance_page' sem.id %}">Semester {{ sem.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+    {% endblock %}
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Attendance Management System</p>
+    </footer>
+
+</body>
+</html>

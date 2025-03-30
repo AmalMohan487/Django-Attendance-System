@@ -1,0 +1,221 @@
+{% extends 'admin/adminindex.html' %}
+{% block content %}
+<style>
+    /* Center the form */
+    .form-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f7fc;
+    }
+
+    /* Card-style form */
+    .form-container {
+        width: 100%;
+        max-width: 450px;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: 0.3s ease;
+    }
+
+    .form-container:hover {
+        box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    h2 {
+        color: #333;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+
+    /* Form Styling */
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .input-group {
+        position: relative;
+        width: 100%;
+    }
+
+    /* Floating Labels */
+    .input-group label {
+        position: absolute;
+        top: 50%;
+        left: 12px;
+        transform: translateY(-50%);
+        color: #777;
+        font-size: 14px;
+        transition: 0.3s ease;
+        pointer-events: none;
+        background: white;
+        padding: 0 5px;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        outline: none;
+        background: none;
+    }
+
+    /* Label moves up when typing */
+    input:focus + label, 
+    input:not(:placeholder-shown) + label,
+    select:focus + label, 
+    select:not([value=""]) + label {
+        top: -10px;
+        left: 10px;
+        font-size: 12px;
+        color: #007bff;
+    }
+
+    /* Improved Dropdown Styling */
+    select {
+        appearance: none;
+        background: url('data:image/svg+xml;utf8,<svg fill="%23777" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 12px center;
+        background-size: 18px;
+        padding-right: 35px;
+        cursor: pointer;
+    }
+
+    /* Submit Button */
+    .submit-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.3s ease;
+    }
+
+    .submit-btn:hover {
+        background-color: #0056b3;
+    }
+
+    /* Loading Animation */
+    .loading {
+        font-size: 14px;
+        color: #555;
+        display: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+        .form-container {
+            width: 90%;
+            padding: 20px;
+        }
+    }
+</style>
+
+<!-- Assign Subject Form -->
+<div class="form-wrapper">
+    <div class="form-container">
+        <h2>Assign Subject</h2>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="input-group">
+                    {% if field.field.widget.input_type == "select" %}
+                        <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="form-control">
+                            {% for choice in field.field.choices %}
+                                <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="{{ field.id_for_label }}"></label>
+                    {% else %}
+                        <input type="{{ field.field.widget.input_type }}" 
+                               name="{{ field.html_name }}" 
+                               id="{{ field.id_for_label }}" 
+                               class="form-control" 
+                               placeholder=" ">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="submit-btn w-100">Assign Subject</button>
+            <p class="loading">Loading...</p>
+        </form>
+    </div>
+</div>
+
+<script>
+    const departmentSelect = document.querySelector('[name="department"]');
+    const semesterSelect = document.querySelector('[name="semester"]');
+    const subjectSelect = document.querySelector('[name="subject"]');
+    const teacherSelect = document.querySelector('[name="teacher"]');
+    const loadingText = document.querySelector('.loading');
+
+    // Show loading text
+    function showLoading(show) {
+        loadingText.style.display = show ? "block" : "none";
+    }
+
+    // Load teachers when department is selected
+    departmentSelect.addEventListener('change', function() {
+        const departmentId = this.value;
+        showLoading(true);
+
+        fetch(`/ajax/load-teachers/?department_id=${departmentId}`)
+            .then(response => response.json())
+            .then(data => {
+                teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+                data.forEach(function(teacher) {
+                    const option = document.createElement('option');
+                    option.value = teacher.id;
+                    option.textContent = teacher.name;
+                    teacherSelect.appendChild(option);
+                });
+                showLoading(false);
+            });
+
+        if (!semesterSelect.value) {
+            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+        } else {
+            loadSubjects(departmentId, semesterSelect.value);
+        }
+    });
+
+    // Load subjects when semester or department is selected
+    semesterSelect.addEventListener('change', function() {
+        const semesterId = this.value;
+        const departmentId = departmentSelect.value;
+        loadSubjects(departmentId, semesterId);
+    });
+
+    function loadSubjects(departmentId, semesterId) {
+        if (departmentId && semesterId) {
+            showLoading(true);
+            fetch(`/ajax/load-subjects/?department_id=${departmentId}&semester_id=${semesterId}`)
+                .then(response => response.json())
+                .then(data => {
+                    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+                    data.forEach(function(subject) {
+                        const option = document.createElement('option');
+                        option.value = subject.id;
+                        option.textContent = subject.name;
+                        subjectSelect.appendChild(option);
+                    });
+                    showLoading(false);
+                });
+        } else {
+            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+        }
+    }
+</script>
+{% endblock %}

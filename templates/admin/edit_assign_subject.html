@@ -1,0 +1,192 @@
+{% extends 'admin/adminindex.html' %}
+{% block content %}
+<style>
+    /* Form Container */
+    /* Centering the Form */
+    .form-container {
+        width: 90%;
+        max-width: 600px;
+        padding: 20px;
+        background-color: #e3f2fd; /* Light blue background */
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    
+        /* Center   Horizontally & Vertically */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+
+    /* Form Styling */
+    .form-container form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Form Fields */
+    .form-container select,
+    .form-container input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        background-color: white;
+    }
+
+    /* Submit Button */
+    .submit-btn {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .submit-btn:hover {
+        background-color: #0056b3;
+    }
+
+    /* Loading Animation */
+    .loading {
+        font-size: 14px;
+        color: #555;
+        display: none;
+    }
+
+    /* Cancel Button */
+    .cancel-btn {
+        display: inline-block;
+        margin-top: 10px;
+        text-decoration: none;
+        color: #007bff;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .cancel-btn:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<!-- Edit Assigned Subject Form -->
+<div class="form-container">
+    <h2>Edit Assigned Subject</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Department -->
+        <select name="{{ form.department.name }}">
+            <option value="" selected disabled>Select Department</option>
+            {% for choice in form.department.field.choices %}
+                <option value="{{ choice.0 }}" {% if form.department.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Semester -->
+        <select name="{{ form.semester.name }}">
+            <option value="" selected disabled>Select Semester</option>
+            {% for choice in form.semester.field.choices %}
+                <option value="{{ choice.0 }}" {% if form.semester.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Subject -->
+        <select name="{{ form.subject.name }}">
+            <option value="" selected disabled>Select Subject</option>
+            {% for choice in form.subject.field.choices %}
+                <option value="{{ choice.0 }}" {% if form.subject.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Teacher -->
+        <select name="{{ form.teacher.name }}">
+            <option value="" selected disabled>Select Teacher</option>
+            {% for choice in form.teacher.field.choices %}
+                <option value="{{ choice.0 }}" {% if form.teacher.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="submit-btn" type="submit">Save Changes</button>
+    </form>
+    
+    <a href="{% url 'Asub' %}" class="cancel-btn">Cancel</a>
+    
+    <p class="loading">Loading...</p>
+</div>
+
+<script>
+    const departmentSelect = document.querySelector('[name="department"]');
+    const semesterSelect = document.querySelector('[name="semester"]');
+    const subjectSelect = document.querySelector('[name="subject"]');
+    const teacherSelect = document.querySelector('[name="teacher"]');
+    const loadingText = document.querySelector('.loading');
+
+    // Show loading text
+    function showLoading(show) {
+        loadingText.style.display = show ? "block" : "none";
+    }
+
+    // Load teachers when department is selected
+    departmentSelect.addEventListener('change', function() {
+        const departmentId = this.value;
+        showLoading(true);
+
+        fetch(`/ajax/load-teachers/?department_id=${departmentId}`)
+            .then(response => response.json())
+            .then(data => {
+                teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+                data.forEach(function(teacher) {
+                    const option = document.createElement('option');
+                    option.value = teacher.id;
+                    option.textContent = teacher.name;
+                    teacherSelect.appendChild(option);
+                });
+                showLoading(false);
+            });
+
+        // Clear subjects if semester is not selected yet
+        if (!semesterSelect.value) {
+            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+        } else {
+            loadSubjects(departmentId, semesterSelect.value);
+        }
+    });
+
+    // Load subjects when semester or department is selected
+    semesterSelect.addEventListener('change', function() {
+        const semesterId = this.value;
+        const departmentId = departmentSelect.value;
+        loadSubjects(departmentId, semesterId);
+    });
+
+    function loadSubjects(departmentId, semesterId) {
+        if (departmentId && semesterId) {
+            showLoading(true);
+            fetch(`/ajax/load-subjects/?department_id=${departmentId}&semester_id=${semesterId}`)
+                .then(response => response.json())
+                .then(data => {
+                    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+                    data.forEach(function(subject) {
+                        const option = document.createElement('option');
+                        option.value = subject.id;
+                        option.textContent = subject.name;
+                        subjectSelect.appendChild(option);
+                    });
+                    showLoading(false);
+                });
+        } else {
+            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+        }
+    }
+</script>
+{% endblock %}
