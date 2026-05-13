@@ -1,0 +1,146 @@
+{% extends 'admin/adminindex.html' %}
+{% load static %}
+
+{% block content %}
+<div class="main-content">
+    <div class="report-actions-container">
+
+        <!-- Page Title -->
+        <h1 class="page-title">Attendance Report Center</h1>
+        <p class="page-subtitle">
+            Generate institution-wide attendance reports and send low attendance alerts.
+        </p>
+
+        <!-- Card Grid -->
+        <div class="action-grid">
+
+            <!-- Card 1: Generate Full Attendance Report -->
+            <a href="{% url 'select_department_semester' %}" class="action-card">
+                <div class="icon-wrapper blue">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h3>View Attendance Report</h3>
+                <p>
+                    Select department and semester to view detailed attendance reports
+                    for all students.
+                </p>
+            </a>
+
+            <!-- Card 2: Generate PDF and Send Alerts -->
+            <a href="{% url 'generate_report_and_send_alerts' %}" class="action-card">
+                <div class="icon-wrapper red">
+                    <i class="fas fa-envelope-open-text"></i>
+                </div>
+                <h3>Generate PDF & Send Alerts</h3>
+                <p>
+                    Automatically find students below 75% attendance, generate a PDF,
+                    and send warning emails to students and teachers.
+                </p>
+            </a>
+
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* Main Wrapper */
+.report-actions-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: auto;
+    text-align: center;
+}
+
+/* Title */
+.page-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+.page-subtitle {
+    color: #64748b;
+    font-size: 16px;
+    margin-bottom: 50px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.7;
+}
+
+/* Grid */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+}
+
+/* Card */
+.action-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 50px 35px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+}
+
+/* Icons */
+.icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 25px;
+}
+
+.icon-wrapper i {
+    font-size: 34px;
+    color: white;
+}
+
+.icon-wrapper.blue {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.icon-wrapper.red {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Text */
+.action-card h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #0f172a;
+}
+
+.action-card p {
+    font-size: 15px;
+    color: #64748b;
+    line-height: 1.8;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 28px;
+    }
+
+    .action-card {
+        padding: 40px 25px;
+    }
+}
+</style>
+{% endblock %}

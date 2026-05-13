@@ -402,6 +402,8 @@ def select_department_semester(request):
     semesters = Semester.objects.all()
     
     return render(request, 'admin/select_department_semester.html', {'departments': departments, 'semesters': semesters})
+
+
 def view_report_card(request):
     if request.method == 'POST':
         department_id = request.POST.get('department')
@@ -532,5 +534,308 @@ def download_attendance_report(request, department_id, semester_id):
 
     # Generate PDF
     pdf.build(elements)
+
+    return response
+
+
+
+
+# attendance/views.py
+
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+
+
+
+# ==========================================================
+# 1. Attendance Report Center Page
+# ==========================================================
+@login_required
+def attendance_report_center(request):
+    """
+    Shows two options:
+    1. View Attendance Report
+    2. Generate PDF & Send Alerts
+    """
+    return render(request, 'admin/attendance.html')
+
+
+# ==========================================================
+# 2. Generate PDF and Send Alerts
+# ==========================================================
+# Add these imports at the top of views.py
+from io import BytesIO
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+from django.http import HttpResponse
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Table,
+    TableStyle,
+    Paragraph,
+    Spacer,
+)
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet
+
+
+@login_required
+def generate_report_and_send_alerts(request):
+    """
+    1. Find all approved students with attendance below 75%.
+    2. Generate a master PDF report for the admin.
+    3. Send HTML email to each student.
+    4. Attach an individual PDF containing only that student's details.
+    5. Return the master PDF as a download to the admin.
+    """
+
+    LOW_ATTENDANCE_THRESHOLD = 75
+    total_alerts_sent = 0
+    low_attendance_students = []
+
+    # ==========================================================
+    # STEP 1: Collect Low Attendance Data
+    # ==========================================================
+    students = Student.objects.filter(is_approved=True)
+
+    for student in students:
+        subjects = Subject.objects.filter(semester=student.semester)
+        subject_data = []
+
+        total_hours_all = 0
+        attended_hours_all = 0
+
+        for subject in subjects:
+            total_hours = calculate_total_hours(
+                subject.id,
+                student.semester.id,
+                student.department.id
+            )
+
+            attended_hours = student_attendance_hours(
+                student.id,
+                subject.id
+            )
+
+            # Skip subjects that were never handled
+            if total_hours == 0:
+                continue
+
+            attendance_percentage = (
+                attended_hours / total_hours
+            ) * 100
+
+            total_hours_all += total_hours
+            attended_hours_all += attended_hours
+
+            # Store only low attendance subjects
+            if attendance_percentage < LOW_ATTENDANCE_THRESHOLD:
+                subject_data.append({
+                    'subject': getattr(subject, 'full', subject.name),
+                    'attendance_percentage': round(attendance_percentage, 2),
+                    'total_classes': total_hours,
+                    'attended_classes': attended_hours,
+                })
+
+        # Skip students with no low-attendance subjects
+        if not subject_data:
+            continue
+
+        overall_percentage = (
+            attended_hours_all / total_hours_all
+        ) * 100 if total_hours_all > 0 else 0
+
+        low_attendance_students.append({
+            'student': student,
+            'subjects': subject_data,
+            'overall_percentage': round(overall_percentage, 2)
+        })
+
+    # ==========================================================
+    # STEP 2: If No Students Found
+    # ==========================================================
+    if not low_attendance_students:
+        messages.info(
+            request,
+            "No students found with attendance below 75%."
+        )
+        return redirect('attendance_report_center')
+
+    # ==========================================================
+    # STEP 3: Generate Master PDF (All Low Attendance Students)
+    # ==========================================================
+    master_pdf_buffer = BytesIO()
+
+    doc = SimpleDocTemplate(
+        master_pdf_buffer,
+        pagesize=landscape(A4),
+        rightMargin=20,
+        leftMargin=20,
+        topMargin=20,
+        bottomMargin=20
+    )
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(
+        Paragraph("<b>Low Attendance Report</b>", styles['Title'])
+    )
+    elements.append(Spacer(1, 20))
+
+    data = [[
+        'Student Name',
+        'Reg No',
+        'Department',
+        'Semester',
+        'Overall %'
+    ]]
+
+    for item in low_attendance_students:
+        student = item['student']
+        data.append([
+            student.name,
+            student.reg_no,
+            student.department.name,
+            student.semester.name,
+            f"{item['overall_percentage']}%"
+        ])
+
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.red),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    elements.append(table)
+    doc.build(elements)
+
+    master_pdf_buffer.seek(0)
+    master_pdf_data = master_pdf_buffer.getvalue()
+
+    # ==========================================================
+    # STEP 4: Send Individual Emails with Personal PDFs
+    # ==========================================================
+    for item in low_attendance_students:
+        student = item['student']
+        subjects = item['subjects']
+
+        # Render HTML email using your template
+        # Template format based on uploaded file:
+        # :contentReference[oaicite:0]{index=0}
+        html_content = render_to_string(
+            'email/low_attendance_email.html',
+            {
+                'name': student.name,
+                'subjects': subjects,
+            }
+        )
+
+        # ------------------------------------------------------
+        # Generate Individual Student PDF
+        # ------------------------------------------------------
+        student_pdf_buffer = BytesIO()
+
+        student_doc = SimpleDocTemplate(
+            student_pdf_buffer,
+            pagesize=A4,
+            rightMargin=20,
+            leftMargin=20,
+            topMargin=20,
+            bottomMargin=20
+        )
+
+        student_elements = []
+
+        student_elements.append(
+            Paragraph(
+                f"<b>Low Attendance Report - {student.name}</b>",
+                styles['Title']
+            )
+        )
+        student_elements.append(Spacer(1, 20))
+
+        student_data = [[
+            'Subject',
+            'Attendance %',
+            'Total Classes',
+            'Attended Classes'
+        ]]
+
+        for subject in subjects:
+            student_data.append([
+                subject['subject'],
+                f"{subject['attendance_percentage']}%",
+                subject['total_classes'],
+                subject['attended_classes'],
+            ])
+
+        student_table = Table(student_data, repeatRows=1)
+        student_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.red),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+
+        student_elements.append(student_table)
+        student_doc.build(student_elements)
+
+        student_pdf_buffer.seek(0)
+        student_pdf_data = student_pdf_buffer.getvalue()
+
+        # ------------------------------------------------------
+        # Create Email
+        # ------------------------------------------------------
+        email = EmailMultiAlternatives(
+            subject='Attendance Warning',
+            body='Your attendance is below 75%.',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[student.email]
+        )
+
+        # HTML email body
+        email.attach_alternative(html_content, "text/html")
+
+        # Attach only this student's PDF
+        email.attach(
+            f"{student.reg_no}_low_attendance_report.pdf",
+            student_pdf_data,
+            'application/pdf'
+        )
+
+        # Send email
+        try:
+            email.send()
+            total_alerts_sent += 1
+        except Exception as e:
+            print(f"Email error for {student.email}: {e}")
+
+    # ==========================================================
+    # STEP 5: Show Success Message
+    # ==========================================================
+    messages.success(
+        request,
+        f"Master PDF generated and emails sent to "
+        f"{total_alerts_sent} students."
+    )
+
+    # ==========================================================
+    # STEP 6: Return Master PDF to Admin
+    # ==========================================================
+    response = HttpResponse(
+        master_pdf_data,
+        content_type='application/pdf'
+    )
+    response['Content-Disposition'] = (
+        'attachment; filename=\"low_attendance_report.pdf\"'
+    )
 
     return response

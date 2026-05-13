@@ -13,7 +13,20 @@ urlpatterns = [
     path('view-report-card/', views.view_report_card, name='view_report_card'),
     
         path('select/', views.select_department_semester, name='select_department_semester'),
-  
+      path(
+        'attendance-report-center/',
+        views.attendance_report_center,
+        name='attendance_report_center'
+    ),
+
+    # ==========================================================
+    # Generate PDF and Send Alerts
+    # ==========================================================
+    path(
+        'generate-report-and-send-alerts/',
+        views.generate_report_and_send_alerts,
+        name='generate_report_and_send_alerts'
+    ),
     path('Dept', views.Dept, name='Dept'),
     path('std', views.std, name='std'),
     path('tech', views.tech, name='tech'),
