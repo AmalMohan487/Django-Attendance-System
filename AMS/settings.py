@@ -31,7 +31,6 @@ ALLOWED_HOSTS = os.environ.get(
     ".onrender.com,localhost,127.0.0.1"
 ).split(",")
 
-
 # =========================================================
 # APPLICATION DEFINITION
 # =========================================================
@@ -50,7 +49,6 @@ INSTALLED_APPS = [
     'attendance',
 
     # Cron jobs
-    'django_cron',
 ]
 
 MIDDLEWARE = [
@@ -188,6 +186,3 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # CRON JOBS
 # =========================================================
 
-CRON_CLASSES = [
-    "attendance.cron.AttendanceWarningCronJob",
-]
