@@ -22,14 +22,16 @@ SECRET_KEY = os.environ.get(
     "django-insecure-local-development-key"
 )
 
-# DEBUG=True locally, DEBUG=False on Render
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+# Local development default: True
+# Render production: set DEBUG=False in Environment Variables
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 # Allowed hosts
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
     ".onrender.com,localhost,127.0.0.1"
 ).split(",")
+
 
 # =========================================================
 # APPLICATION DEFINITION
@@ -47,8 +49,6 @@ INSTALLED_APPS = [
     'public',
     'subject',
     'attendance',
-
-    # Cron jobs
 ]
 
 MIDDLEWARE = [
@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'AMS.wsgi.application'
 # =========================================================
 
 # Uses Render PostgreSQL if DATABASE_URL exists.
-# Otherwise uses SQLite locally.
+# Otherwise uses local SQLite.
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -144,10 +144,8 @@ STATICFILES_DIRS = [
 # Folder where collectstatic stores files
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise static file storage
-STATICFILES_STORAGE = (
-    'whitenoise.storage.CompressedManifestStaticFilesStorage'
-)
+# WhiteNoise storage
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # =========================================================
@@ -175,14 +173,7 @@ EMAIL_PORT = 465
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 
-# Read email credentials from environment variables
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
-
-# =========================================================
-# CRON JOBS
-# =========================================================
-
