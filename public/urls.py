@@ -18,7 +18,6 @@ urlpatterns = [
         views.attendance_report_center,
         name='attendance_report_center'
     ),
-path('test-page/', views.test_page, name='test_page'),
     # ==========================================================
     # Generate PDF and Send Alerts
     # ==========================================================
