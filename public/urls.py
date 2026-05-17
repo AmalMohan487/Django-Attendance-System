@@ -23,11 +23,11 @@ urlpatterns = [
     # ==========================================================
     # Generate PDF and Send Alerts
     # ==========================================================
-    path(
-        'generate-report-and-send-alerts/',
-        views.generate_report_and_send_alerts,
-        name='generate_report_and_send_alerts'
-    ),
+path(
+    'generate-report-and-send-alerts/',
+    generate_report_and_send_alerts,
+    name='generate_report_and_send_alerts'
+),
     path('Dept', views.Dept, name='Dept'),
     path('std', views.std, name='std'),
     path('tech', views.tech, name='tech'),
