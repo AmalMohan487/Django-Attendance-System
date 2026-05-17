@@ -589,17 +589,21 @@ from attendance.utils import (
     check_and_send_attendance_warnings,
     check_and_send_teacher_attendance_warnings,
 )
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+import traceback
+
+from attendance.utils import check_and_send_attendance_warnings
+
+
 @login_required
 def generate_report_and_send_alerts(request):
     try:
-        # Send emails to students
+        # Send student low attendance emails only
         check_and_send_attendance_warnings()
 
-        # Send emails to teachers
-        check_and_send_teacher_attendance_warnings()
-
         return HttpResponse(
-            "Low attendance emails sent successfully to students and teachers!"
+            "Low attendance emails sent successfully!"
         )
 
     except Exception:
