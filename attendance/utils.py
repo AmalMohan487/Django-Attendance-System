@@ -53,7 +53,7 @@ def send_low_attendance_email(student, subjects):
     # Send Email
     email = EmailMultiAlternatives(subject, "", from_email, to_email)
     email.attach_alternative(html_content, "text/html")
-    email.send()
+    email.send(fail_silently=True)
 
 from attendance.models import Attendance, Student, Subject
 
@@ -109,7 +109,7 @@ def send_low_attendance_email_to_teacher(teacher, students_info):
     email.attach_alternative(html_content, "text/html")
 
     try:
-        email.send()
+        email.send(fail_silently=True)
         print(f"Email sent to {teacher.email}")
     except Exception as e:
         print(f"Failed to send email to {teacher.email}: {e}")
