@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from .email_views import generate_report_and_send_alerts
+
 
 urlpatterns = [
     path('', views.homepage, name='homepage'),
