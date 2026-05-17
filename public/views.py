@@ -565,56 +565,22 @@ def attendance_report_center(request):
 # 2. Generate PDF and Send Alerts
 # ==========================================================
 # Add these imports at the top of views.py
-from io import BytesIO
-from django.template.loader import render_to_string
-from django.core.mail import EmailMultiAlternatives
-from django.conf import settings
-from django.http import HttpResponse
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Table,
-    TableStyle,
-    Paragraph,
-    Spacer,
-)
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
-
-import traceback
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-
-from attendance.utils import (
-    check_and_send_attendance_warnings,
-    check_and_send_teacher_attendance_warnings,
-)
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 import traceback
 
-from attendance.utils import check_and_send_attendance_warnings
-
-
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-import traceback
-
-from attendance.utils import check_and_send_attendance_warnings
-
-
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-import traceback
-from attendance.utils import check_and_send_attendance_warnings
 
 @login_required
 def generate_report_and_send_alerts(request):
     try:
+        from attendance.utils import check_and_send_attendance_warnings
+
         check_and_send_attendance_warnings()
-        return HttpResponse("Low attendance emails sent successfully!")
+
+        return HttpResponse(
+            "Low attendance emails sent successfully!"
+        )
+
     except Exception:
         return HttpResponse(
             "<pre>" + traceback.format_exc() + "</pre>"
