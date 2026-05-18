@@ -1,172 +1,248 @@
-{% load static %}
+# Build Attendance Report Page + Download PDF
+
+This guide adds the next feature to your Attendance Management System:
+
+## Workflow
+
+When the admin clicks **Generate Report and Send Alerts**:
+
+1. Student and teacher low-attendance emails are sent.
+2. Admin is redirected to a report page.
+3. The report page shows grouped low-attendance data.
+4. A **Download PDF** button lets the admin download the report.
+
+---
+
+# Step 1: Add Report Data Function to `attendance/utils.py`
+
+Add this function at the bottom of `attendance/utils.py`.
+
+```python
+
+```
+
+---
+
+# Step 2: Update `public/email_views.py`
+
+Replace the entire file with:
+
+```python
+
+---
+
+# Step 3: Create Template
+
+Create:
+
+```text
+public/templates/public/attendance_report.html
+```
+
+Paste:
+
+```html
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semester Selection</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'css/stdstyle.css' %}">
-
-    <script>
-        function toggleMenu() {
-            document.getElementById("nav-links").classList.toggle("active");
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll(".progress-circle").forEach(circle => {
-                let progress = parseFloat(circle.getAttribute("data-progress"));
-                let color;
-
-                if (progress > 90) {
-                    color = "#28a745"; // Green
-                } else if (progress < 65) {
-                    color = "#dc3545"; // Red
-                } else if (progress < 75) {
-                    color = "#ffa500"; // Light Orange
-                } else {
-                    color = "#007bff"; // Blue
-                }
-                circle.style.background = `conic-gradient(${color} ${progress}%, #ddd ${progress}%)`;
-            });
-        });
-    </script>
-
+    <title>Low Attendance Report</title>
     <style>
-        /* Grid Layout */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            max-width: 90%;
-            margin: auto;
-            padding: 20px;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
         }
-
-        /* Attendance Card */
-        .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(135deg, #6a11cb, #2575fc);
+        .student-card {
+            border: 1px solid #ccc;
             padding: 15px;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 350px;
-            height: 170px;
-            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+        .download-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
             color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
         }
-
-        .container:hover {
-            transform: scale(1.05);
-            box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Subject Information */
-        .info {
-            width: 60%;
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding-left: 10px;
-            align-items: center;
-            word-wrap: break-word; /* Break long words */
-            overflow-wrap: break-word; 
-        }
-
-        .info h3 {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .info p {
-            font-size: 14px;
-            margin: 2px 0;
-        }
-
-        /* Circular Progress Graph */
-        .progress-container {
-            width: 40%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .progress-circle {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.6);
-        }
-
-        .inner-circle {
-            width: 110px;
-            height: 110px;
-            background: rgb(255, 255, 255);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 14px;
-            font-weight: bold;
-            color: black;
-            position: absolute;
-            box-shadow: inset 0px 4px 10px rgba(0, 0, 0, 0.2);
+        .download-btn:hover {
+            background: #0056b3;
         }
     </style>
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="logo">
-            <img src="{% static 'images/logo.png' %}" alt="Logo">
-        </div>     
-        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-        <ul class="nav-links" id="nav-links">
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Contact</a></li>
-        </ul>
-    </nav>
+<h1>Low Attendance Report</h1>
 
-    <div class="content">
-        {% block content %}
+<p>
+    Emails sent to <strong>{{ student_count }}</strong> students and
+    <strong>{{ teacher_count }}</strong> teachers.
+</p>
 
-        <div class="grid-container">
-            {% for data in attendance_data %}
-            <div class="container">
-                <div class="info">
-                    <h3>{{ data.subject_name }}</h3>
-                    <p>Total Hours: <strong>{{ data.total_hours }}</strong></p>
-                    <p>Attended: <strong>{{ data.attended_hours }}</strong></p>
-                </div>
-                <div class="progress-container">
-                    <div class="progress-circle" data-progress="{{ data.attendance_percentage }}">
-                        <div class="inner-circle">{{ data.attendance_percentage }}%</div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+<a href="{% url 'download_low_attendance_pdf' %}" class="download-btn">
+    Download PDF
+</a>
+
+{% for dept in report_data %}
+    <h2>Department: {{ dept.department }}</h2>
+
+    {% for student in dept.students %}
+        <div class="student-card">
+            <strong>{{ student.name }}</strong>
+            ({{ student.reg_no }}) - Semester {{ student.semester }}
+
+            <ul>
+                {% for subject in student.subjects %}
+                    <li>
+                        {{ subject.subject }} - {{ subject.percentage }}%
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
-
-        <a href="{% url 'student_attendance_detail' %}" class="add-btn">Full Attendance</a>
-
-        {% endblock %}
-    </div>
-
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2025 Attendance Management System</p>
-    </footer>
+    {% endfor %}
+{% empty %}
+    <p>No students with attendance below 75%.</p>
+{% endfor %}
 
 </body>
 </html>
+```
+
+---
+
+# Step 4: Add PDF Download View to `public/views.py`
+
+Add this function to `public/views.py`.
+
+```python
+from django.http import HttpResponse
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+)
+from reportlab.platypus.flowables import KeepTogether
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+
+
+def download_low_attendance_pdf(request):
+    from attendance.utils import get_low_attendance_report_data
+
+    report_data = get_low_attendance_report_data()
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = (
+        'attachment; filename="low_attendance_report.pdf"'
+    )
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40,
+    )
+
+    styles = getSampleStyleSheet()
+    story = []
+
+    story.append(Paragraph('Low Attendance Report', styles['Title']))
+    story.append(Spacer(1, 0.2 * inch))
+
+    if not report_data:
+        story.append(
+            Paragraph('No students with attendance below 75%.', styles['BodyText'])
+        )
+    else:
+        for dept in report_data:
+            story.append(
+                Paragraph(
+                    f"<b>Department: {dept['department']}</b>",
+                    styles['Heading2'],
+                )
+            )
+            story.append(Spacer(1, 0.1 * inch))
+
+            for student in dept['students']:
+                lines = [
+                    f"<b>{student['name']}</b> "
+                    f"({student['reg_no']}) - Semester {student['semester']}"
+                ]
+
+                for subject in student['subjects']:
+                    lines.append(
+                        f"• {subject['subject']} - {subject['percentage']}%"
+                    )
+
+                paragraph = Paragraph('<br/>'.join(lines), styles['BodyText'])
+                story.append(KeepTogether([paragraph]))
+                story.append(Spacer(1, 0.15 * inch))
+
+    doc.build(story)
+    return response
+```
+
+---
+
+# Step 5: Update `public/urls.py`
+
+Add this URL pattern:
+
+```python
+path(
+    'download-low-attendance-pdf/',
+    views.download_low_attendance_pdf,
+    name='download_low_attendance_pdf'
+),
+```
+
+---
+
+# Step 6: Install ReportLab
+
+Add to `requirements.txt` if not already present:
+
+```text
+reportlab==4.4.1
+```
+
+---
+
+# Step 7: Commit and Push
+
+```bash
+git add attendance/utils.py public/email_views.py public/views.py public/urls.py requirements.txt
+git commit -m "Add attendance report page and PDF download"
+git push origin main
+```
+
+---
+
+# Final Workflow
+
+When admin clicks:
+
+```text
+Generate Report and Send Alerts
+```
+
+The system will:
+
+1. Send emails.
+2. Show grouped report page.
+3. Display a Download PDF button.
+4. Allow optional PDF download.
+
+---
+
+# Expected Result
+
+* Emails sent to low-attendance students and teachers.
+* Admin sees report immediately.
+* Student appears only once.
+* Multiple low-attendance subjects appear under the same student.
+* PDF can be downloaded when needed.
