@@ -137,3 +137,5 @@ def generate_report_and_send_alerts(request):
 
     except Exception as e:
         return HttpResponse(f"ERROR: {e}")
+    
+    
