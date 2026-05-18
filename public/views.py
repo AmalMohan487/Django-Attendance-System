@@ -567,3 +567,72 @@ def attendance_report_center(request):
 # Add these imports at the top of views.py
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+
+from django.http import HttpResponse
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+)
+from reportlab.platypus.flowables import KeepTogether
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+
+
+def download_low_attendance_pdf(request):
+    from attendance.utils import get_low_attendance_report_data
+
+    report_data = get_low_attendance_report_data()
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = (
+        'attachment; filename="low_attendance_report.pdf"'
+    )
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40,
+    )
+
+    styles = getSampleStyleSheet()
+    story = []
+
+    story.append(Paragraph('Low Attendance Report', styles['Title']))
+    story.append(Spacer(1, 0.2 * inch))
+
+    if not report_data:
+        story.append(
+            Paragraph('No students with attendance below 75%.', styles['BodyText'])
+        )
+    else:
+        for dept in report_data:
+            story.append(
+                Paragraph(
+                    f"<b>Department: {dept['department']}</b>",
+                    styles['Heading2'],
+                )
+            )
+            story.append(Spacer(1, 0.1 * inch))
+
+            for student in dept['students']:
+                lines = [
+                    f"<b>{student['name']}</b> "
+                    f"({student['reg_no']}) - Semester {student['semester']}"
+                ]
+
+                for subject in student['subjects']:
+                    lines.append(
+                        f"• {subject['subject']} - {subject['percentage']}%"
+                    )
+
+                paragraph = Paragraph('<br/>'.join(lines), styles['BodyText'])
+                story.append(KeepTogether([paragraph]))
+                story.append(Spacer(1, 0.15 * inch))
+
+    doc.build(story)
+    return response

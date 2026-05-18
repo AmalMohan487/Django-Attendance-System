@@ -329,3 +329,90 @@ def check_and_send_teacher_attendance_warnings():
             total_teacher_alerts += 1
 
     return total_teacher_alerts
+
+
+from collections import OrderedDict
+
+
+def get_low_attendance_report_data():
+    """
+    Returns grouped report data.
+
+    Structure:
+    [
+        {
+            'department': 'Computer Science',
+            'students': [
+                {
+                    'reg_no': 'CS001',
+                    'name': 'John Doe',
+                    'semester': 'S6',
+                    'subjects': [
+                        {'subject': 'DBMS', 'percentage': 72.5},
+                        {'subject': 'FLAT', 'percentage': 68.0},
+                    ]
+                }
+            ]
+        }
+    ]
+    """
+
+    department_map = OrderedDict()
+
+    students = Student.objects.filter(
+        is_approved=True,
+    ).select_related('department', 'semester')
+
+    for student in students:
+        subjects = Subject.objects.filter(
+            semester=student.semester,
+            department=student.department,
+        )
+
+        low_subjects = []
+
+        for subject in subjects:
+            total_classes = calculate_total_hours(
+                subject.id,
+                student.semester_id,
+                student.department_id,
+            )
+
+            attended_classes = student_attendance_hours(
+                student.id,
+                subject.id,
+            )
+
+            if total_classes > 0:
+                percentage = (attended_classes / total_classes) * 100
+
+                if percentage < PASS_PERCENTAGE:
+                    low_subjects.append({
+                        'subject': subject.name,
+                        'percentage': round(percentage, 2),
+                    })
+
+        if not low_subjects:
+            continue
+
+        dept_name = student.department.name
+
+        if dept_name not in department_map:
+            department_map[dept_name] = []
+
+        department_map[dept_name].append({
+            'reg_no': student.reg_no,
+            'name': student.name,
+            'semester': student.semester.name,
+            'subjects': low_subjects,
+        })
+
+    report_data = []
+
+    for dept_name, students_list in department_map.items():
+        report_data.append({
+            'department': dept_name,
+            'students': students_list,
+        })
+
+    return report_data

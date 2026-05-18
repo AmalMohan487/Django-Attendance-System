@@ -23,6 +23,11 @@ urlpatterns = [
     # ==========================================================
     # Generate PDF and Send Alerts
     # ==========================================================
+    path(
+    'download-low-attendance-pdf/',
+    views.download_low_attendance_pdf,
+    name='download_low_attendance_pdf'
+),
 path(
     'generate-report-and-send-alerts/',
     generate_report_and_send_alerts,
