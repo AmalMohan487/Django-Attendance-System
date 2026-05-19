@@ -566,9 +566,6 @@ def attendance_report_center(request):
 # ==========================================================
 # Add these imports at the top of views.py
 from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-
-from django.http import HttpResponse
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,

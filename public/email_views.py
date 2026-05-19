@@ -18,7 +18,7 @@ def generate_report_and_send_alerts(request):
 
         report_data = get_low_attendance_report_data()
 
-        return render(request, 'admin/attendance_report.html', {
+        return render(request, 'public/attendance_report.html', {
             'report_data': report_data,
             'student_count': student_count,
             'teacher_count': teacher_count,

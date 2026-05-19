@@ -333,23 +333,27 @@ def check_and_send_teacher_attendance_warnings():
 
 from collections import OrderedDict
 
+from collections import OrderedDict
+
 
 def get_low_attendance_report_data():
     """
-    Returns grouped report data.
+    Returns grouped report data in the structure:
 
-    Structure:
     [
         {
-            'department': 'Computer Science',
-            'students': [
+            'department': 'Computer Science Engineering',
+            'semesters': [
                 {
-                    'reg_no': 'CS001',
-                    'name': 'John Doe',
-                    'semester': 'S6',
-                    'subjects': [
-                        {'subject': 'DBMS', 'percentage': 72.5},
-                        {'subject': 'FLAT', 'percentage': 68.0},
+                    'semester': 'S7',
+                    'students': [
+                        {
+                            'reg_no': 'LHC22CS044',
+                            'name': 'AMAL',
+                            'subjects': [
+                                {'subject': 'CC', 'percentage': 0.0}
+                            ]
+                        }
                     ]
                 }
             ]
@@ -396,23 +400,34 @@ def get_low_attendance_report_data():
             continue
 
         dept_name = student.department.name
+        sem_name = student.semester.name
 
         if dept_name not in department_map:
-            department_map[dept_name] = []
+            department_map[dept_name] = OrderedDict()
 
-        department_map[dept_name].append({
+        if sem_name not in department_map[dept_name]:
+            department_map[dept_name][sem_name] = []
+
+        department_map[dept_name][sem_name].append({
             'reg_no': student.reg_no,
             'name': student.name,
-            'semester': student.semester.name,
             'subjects': low_subjects,
         })
 
     report_data = []
 
-    for dept_name, students_list in department_map.items():
+    for dept_name, semesters in department_map.items():
+        semester_list = []
+
+        for sem_name, students_list in semesters.items():
+            semester_list.append({
+                'semester': sem_name,
+                'students': students_list,
+            })
+
         report_data.append({
             'department': dept_name,
-            'students': students_list,
+            'semesters': semester_list,
         })
 
     return report_data
