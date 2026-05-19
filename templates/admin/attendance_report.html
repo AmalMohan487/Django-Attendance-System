@@ -7,12 +7,11 @@
             font-family: Arial, sans-serif;
             margin: 30px;
         }
-        .student-card {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
+
+        h1 {
+            margin-bottom: 10px;
         }
+
         .download-btn {
             display: inline-block;
             padding: 10px 20px;
@@ -20,10 +19,55 @@
             color: white;
             text-decoration: none;
             border-radius: 5px;
-            margin-bottom: 20px;
+            margin: 15px 0 30px;
         }
+
         .download-btn:hover {
             background: #0056b3;
+        }
+
+        .department-title {
+            margin-top: 40px;
+            color: #1f2937;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 8px;
+        }
+
+        .semester-title {
+            margin-top: 25px;
+            color: #374151;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid #d1d5db;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f3f4f6;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .summary {
+            font-size: 18px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -31,7 +75,7 @@
 
 <h1>Low Attendance Report</h1>
 
-<p>
+<p class="summary">
     Emails sent to <strong>{{ student_count }}</strong> students and
     <strong>{{ teacher_count }}</strong> teachers.
 </p>
@@ -41,21 +85,38 @@
 </a>
 
 {% for dept in report_data %}
-    <h2>Department: {{ dept.department }}</h2>
+    <h2 class="department-title">Department: {{ dept.department }}</h2>
 
-    {% for student in dept.students %}
-        <div class="student-card">
-            <strong>{{ student.name }}</strong>
-            ({{ student.reg_no }}) - Semester {{ student.semester }}
+    {% for sem in dept.semesters %}
+        <h3 class="semester-title">Semester: {{ sem.semester }}</h3>
 
-            <ul>
-                {% for subject in student.subjects %}
-                    <li>
-                        {{ subject.subject }} - {{ subject.percentage }}%
-                    </li>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Reg No</th>
+                    <th style="width: 25%;">Student Name</th>
+                    <th>Subjects Below 75%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in sem.students %}
+                    <tr>
+                        <td>{{ student.reg_no }}</td>
+                        <td>{{ student.name }}</td>
+                        <td>
+                            <ul>
+                                {% for subject in student.subjects %}
+                                    <li>
+                                        {{ subject.subject }}
+                                        ({{ subject.percentage }}%)
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
                 {% endfor %}
-            </ul>
-        </div>
+            </tbody>
+        </table>
     {% endfor %}
 {% empty %}
     <p>No students with attendance below 75%.</p>

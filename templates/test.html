@@ -28,6 +28,37 @@ Add this function at the bottom of `attendance/utils.py`.
 Replace the entire file with:
 
 ```python
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+import traceback
+
+
+@login_required
+def generate_report_and_send_alerts(request):
+    try:
+        from attendance.utils import (
+            check_and_send_attendance_warnings,
+            check_and_send_teacher_attendance_warnings,
+            get_low_attendance_report_data,
+        )
+
+        student_count = check_and_send_attendance_warnings()
+        teacher_count = check_and_send_teacher_attendance_warnings()
+
+        report_data = get_low_attendance_report_data()
+
+        return render(request, 'public/attendance_report.html', {
+            'report_data': report_data,
+            'student_count': student_count,
+            'teacher_count': teacher_count,
+        })
+
+    except Exception:
+        return HttpResponse(
+            '<pre>' + traceback.format_exc() + '</pre>'
+        )
+```
 
 ---
 
@@ -42,71 +73,7 @@ public/templates/public/attendance_report.html
 Paste:
 
 ```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Low Attendance Report</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-        }
-        .student-card {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-        }
-        .download-btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .download-btn:hover {
-            background: #0056b3;
-        }
-    </style>
-</head>
-<body>
 
-<h1>Low Attendance Report</h1>
-
-<p>
-    Emails sent to <strong>{{ student_count }}</strong> students and
-    <strong>{{ teacher_count }}</strong> teachers.
-</p>
-
-<a href="{% url 'download_low_attendance_pdf' %}" class="download-btn">
-    Download PDF
-</a>
-
-{% for dept in report_data %}
-    <h2>Department: {{ dept.department }}</h2>
-
-    {% for student in dept.students %}
-        <div class="student-card">
-            <strong>{{ student.name }}</strong>
-            ({{ student.reg_no }}) - Semester {{ student.semester }}
-
-            <ul>
-                {% for subject in student.subjects %}
-                    <li>
-                        {{ subject.subject }} - {{ subject.percentage }}%
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endfor %}
-{% empty %}
-    <p>No students with attendance below 75%.</p>
-{% endfor %}
-
-</body>
-</html>
 ```
 
 ---
