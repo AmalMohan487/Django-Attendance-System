@@ -581,99 +581,120 @@ from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
     Spacer,
+    Table,
+    TableStyle,
 )
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
-import traceback
 
 
 def download_low_attendance_pdf(request):
-    try:
-        from attendance.utils import get_low_attendance_report_data
+    from attendance.utils import get_low_attendance_report_data
 
-        report_data = get_low_attendance_report_data()
+    report_data = get_low_attendance_report_data()
 
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = (
-            'attachment; filename="low_attendance_report.pdf"'
-        )
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = (
+        'attachment; filename="low_attendance_report.pdf"'
+    )
 
-        doc = SimpleDocTemplate(
-            response,
-            pagesize=A4,
-            rightMargin=40,
-            leftMargin=40,
-            topMargin=40,
-            bottomMargin=40,
-        )
+    # Use landscape orientation for wider tables
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        leftMargin=30,
+        rightMargin=30,
+        topMargin=30,
+        bottomMargin=30,
+    )
 
-        styles = getSampleStyleSheet()
-        story = []
+    styles = getSampleStyleSheet()
+    story = []
 
-        # Title
+    # Title
+    story.append(Paragraph("Low Attendance Report", styles['Title']))
+    story.append(Spacer(1, 0.2 * inch))
+
+    if not report_data:
         story.append(
-            Paragraph("Low Attendance Report", styles['Title'])
-        )
-        story.append(Spacer(1, 0.2 * inch))
-
-        if not report_data:
-            story.append(
-                Paragraph(
-                    "No students with attendance below 75%.",
-                    styles['BodyText']
-                )
+            Paragraph(
+                "No students with attendance below 75%.",
+                styles['BodyText']
             )
-        else:
-            for dept in report_data:
-                # Department heading
-                story.append(
-                    Paragraph(
-                        f"<b>Department: {dept['department']}</b>",
-                        styles['Heading1']
-                    )
-                )
-                story.append(Spacer(1, 0.1 * inch))
-
-                for sem in dept['semesters']:
-                    # Semester heading
-                    story.append(
-                        Paragraph(
-                            f"<b>Semester: {sem['semester']}</b>",
-                            styles['Heading2']
-                        )
-                    )
-                    story.append(Spacer(1, 0.1 * inch))
-
-                    for student in sem['students']:
-                        text = (
-                            f"<b>{student['name']}</b> "
-                            f"({student['reg_no']})"
-                        )
-
-                        story.append(
-                            Paragraph(text, styles['BodyText'])
-                        )
-
-                        for subject in student['subjects']:
-                            subject_text = (
-                                f"• {subject['subject']} - "
-                                f"{subject['percentage']}%"
-                            )
-                            story.append(
-                                Paragraph(
-                                    subject_text,
-                                    styles['BodyText']
-                                )
-                            )
-
-                        story.append(Spacer(1, 0.1 * inch))
-
+        )
         doc.build(story)
         return response
 
-    except Exception:
-        return HttpResponse(
-            "<h1>PDF Generation Error</h1>"
-            "<pre>" + traceback.format_exc() + "</pre>"
+    for dept in report_data:
+        # Department heading
+        story.append(
+            Paragraph(
+                f"<b>Department: {dept['department']}</b>",
+                styles['Heading1']
+            )
         )
+        story.append(Spacer(1, 0.15 * inch))
+
+        for sem in dept['semesters']:
+            # Semester heading
+            story.append(
+                Paragraph(
+                    f"<b>Semester: {sem['semester']}</b>",
+                    styles['Heading2']
+                )
+            )
+            story.append(Spacer(1, 0.1 * inch))
+
+            # Table header
+            table_data = [
+                [
+                    "Reg No",
+                    "Student Name",
+                    "Subjects Below 75%"
+                ]
+            ]
+
+            # Table rows
+            for student in sem['students']:
+                subjects_text = ", ".join(
+                    [
+                        f"{sub['subject']} ({sub['percentage']}%)"
+                        for sub in student['subjects']
+                    ]
+                )
+
+                table_data.append([
+                    student['reg_no'],
+                    student['name'],
+                    subjects_text,
+                ])
+
+            # Create table
+            table = Table(
+                table_data,
+                colWidths=[120, 180, 420]
+            )
+
+            # Style table
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1),
+                 [colors.white, colors.whitesmoke]),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ]))
+
+            story.append(table)
+            story.append(Spacer(1, 0.25 * inch))
+
+    doc.build(story)
+    return response
