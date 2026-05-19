@@ -8,39 +8,45 @@ from public.models import AutomationSettings
 
 
 
+from django.utils import timezone
+
 
 def should_run_automation(settings_obj):
     """
-    Returns True if the automation should run now.
+    Return True if the automation should run now.
     """
 
+    # Automation disabled
     if not settings_obj.is_enabled:
         return False
 
-    # Get timezone-aware current datetime
-    now = timezone.localtime(timezone.now())
+    # Current datetime
+    now = timezone.now()
     current_time = now.time()
 
-    # Current time must be greater than or equal to run time
+    # If current time has not reached the scheduled time
     if current_time < settings_obj.run_time:
         return False
 
-    # If never run before, run now
+    # If never run before, allow execution
     if not settings_obj.last_run_at:
         return True
 
-    last_run = timezone.localtime(settings_obj.last_run_at)
+    last_run = settings_obj.last_run_at
 
-    if settings_obj.frequency == 'daily':
+    # DAILY
+    if settings_obj.frequency == "daily":
         return last_run.date() < now.date()
 
-    elif settings_obj.frequency == 'weekly':
+    # WEEKLY
+    elif settings_obj.frequency == "weekly":
         return (
             last_run.isocalendar()[1] < now.isocalendar()[1]
             or last_run.year < now.year
         )
 
-    elif settings_obj.frequency == 'monthly':
+    # MONTHLY
+    elif settings_obj.frequency == "monthly":
         return (
             last_run.year < now.year
             or last_run.month < now.month
