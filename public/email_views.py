@@ -7,6 +7,8 @@ import traceback
 from public.models import AutomationSettings
 
 
+
+
 def should_run_automation(settings_obj):
     """
     Returns True if the automation should run now.
@@ -15,14 +17,15 @@ def should_run_automation(settings_obj):
     if not settings_obj.is_enabled:
         return False
 
-    now = timezone.localtime()
+    # Get timezone-aware current datetime
+    now = timezone.localtime(timezone.now())
     current_time = now.time()
 
-    # Current time must be >= configured run time
+    # Current time must be greater than or equal to run time
     if current_time < settings_obj.run_time:
         return False
 
-    # Never run before
+    # If never run before, run now
     if not settings_obj.last_run_at:
         return True
 
@@ -32,8 +35,10 @@ def should_run_automation(settings_obj):
         return last_run.date() < now.date()
 
     elif settings_obj.frequency == 'weekly':
-        return last_run.isocalendar()[1] < now.isocalendar()[1] \
-               or last_run.year < now.year
+        return (
+            last_run.isocalendar()[1] < now.isocalendar()[1]
+            or last_run.year < now.year
+        )
 
     elif settings_obj.frequency == 'monthly':
         return (
@@ -42,7 +47,6 @@ def should_run_automation(settings_obj):
         )
 
     return False
-
 
 
 def generate_report_and_send_alerts(request):
