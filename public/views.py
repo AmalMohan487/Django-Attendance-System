@@ -454,91 +454,301 @@ def over(request):
 
 
 def download_attendance_report(request, department_id, semester_id):
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="attendance_report.pdf"'
+    """
+    Professional attendance report PDF.
 
-    # Create PDF in landscape mode for maximum width
-    pdf = SimpleDocTemplate(response, pagesize=landscape(letter), rightMargin=2, leftMargin=2, topMargin=2, bottomMargin=2)
+    Features:
+    - Landscape orientation
+    - Supports up to 8 subjects (24 sub-columns)
+    - Multi-row subject headers
+    - Repeating header on each page
+    - Alternating row colors
+    - Color-coded attendance percentage:
+        < 75%  -> Red
+        >=75%  -> Green
+    """
+
+    from django.http import HttpResponse
+    from reportlab.platypus import (
+        SimpleDocTemplate,
+        Paragraph,
+        Spacer,
+        Table,
+        TableStyle,
+    )
+    from reportlab.lib.pagesizes import landscape, letter
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.units import inch
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = (
+        'attachment; filename="attendance_report.pdf"'
+    )
+
+    # ------------------------------------------------------------------
+    # PDF Document Setup
+    # ------------------------------------------------------------------
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(letter),
+        leftMargin=8,
+        rightMargin=8,
+        topMargin=15,
+        bottomMargin=15,
+    )
 
     elements = []
     styles = getSampleStyleSheet()
-    title_style = styles["Title"]
-    normal_style = styles["BodyText"]
 
-    # Fetch Department Name
+    # ------------------------------------------------------------------
+    # Custom Styles
+    # ------------------------------------------------------------------
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Title'],
+        alignment=TA_CENTER,
+        fontSize=18,
+        leading=22,
+        spaceAfter=10,
+    )
+
+    heading_style = ParagraphStyle(
+        'HeadingStyle',
+        parent=styles['Heading2'],
+        fontSize=12,
+        leading=14,
+        spaceAfter=6,
+    )
+
+    body_style = ParagraphStyle(
+        'BodyStyle',
+        parent=styles['BodyText'],
+        fontSize=7,
+        leading=8,
+    )
+
+    header_style = ParagraphStyle(
+        'HeaderStyle',
+        parent=styles['BodyText'],
+        fontSize=7,
+        leading=8,
+        alignment=TA_CENTER,
+    )
+
+    # ------------------------------------------------------------------
+    # Fetch Data
+    # ------------------------------------------------------------------
     department = Department.objects.get(id=department_id)
     semester = Semester.objects.get(id=semester_id)
 
+    students = Student.objects.filter(
+        department_id=department_id,
+        semester_id=semester_id
+    ).order_by('reg_no')
 
+    subjects = Subject.objects.filter(
+        department_id=department_id,
+        semester_id=semester_id
+    ).order_by('name')[:8]   # Max 8 subjects
+
+    # ------------------------------------------------------------------
     # Title
-    title = Paragraph(f"<b>Department: {department.name}</b>", title_style)
-    elements.append(title)
-    title = Paragraph(f"<b>Semester: {semester.name}</b>", title_style)
-    elements.append(title)
+    # ------------------------------------------------------------------
+    elements.append(
+        Paragraph("Student Attendance Report", title_style)
+    )
 
-    # Fetch Students and Subjects
-    students = Student.objects.filter(department_id=department_id, semester_id=semester_id)
-    subjects = Subject.objects.filter(semester_id=semester_id)
+    elements.append(
+        Paragraph(
+            f"<b>Department:</b> {department.name}",
+            heading_style
+        )
+    )
 
-    # ** Multi-Row Headers **
-    header_1 = ["Student Name", "Reg No"]
+    elements.append(
+        Paragraph(
+            f"<b>Semester:</b> {semester.name}",
+            heading_style
+        )
+    )
+
+    elements.append(Spacer(1, 0.15 * inch))
+
+    # ------------------------------------------------------------------
+    # No Data Case
+    # ------------------------------------------------------------------
+    if not students.exists():
+        elements.append(
+            Paragraph("No students found.", styles['BodyText'])
+        )
+        doc.build(elements)
+        return response
+
+    # ------------------------------------------------------------------
+    # Table Headers
+    # ------------------------------------------------------------------
+    header_row_1 = [
+        Paragraph("<b>Sl No</b>", header_style),
+        Paragraph("<b>Reg No</b>", header_style),
+        Paragraph("<b>Student Name</b>", header_style),
+    ]
+
+    # Subject names spanning 3 columns each
     for subject in subjects:
-        header_1.append(Paragraph(f"<b>{subject.name}</b>", normal_style))  # Wrapped text
-        header_1.extend(["", ""])  # Extra columns for "Total", "Attended", "%"
+        header_row_1.append(
+            Paragraph(f"<b>{subject.name}</b>", header_style)
+        )
+        header_row_1.extend(["", ""])
 
-    header_2 = ["", ""]  # Empty for "Student Name" & "Reg No"
+    header_row_2 = ["", "", ""]
+
     for _ in subjects:
-        header_2.extend(["TH", "AH", "%"])
+        header_row_2.extend([
+            Paragraph("<b>TH</b>", header_style),
+            Paragraph("<b>AH</b>", header_style),
+            Paragraph("<b>%</b>", header_style),
+        ])
 
-    # Data starts with headers
-    data = [header_1, header_2]
+    data = [header_row_1, header_row_2]
 
-    # Add Student Data
-    for student in students:
-        row = [student.name, student.reg_no]
+    # ------------------------------------------------------------------
+    # Student Rows
+    # ------------------------------------------------------------------
+    for index, student in enumerate(students, start=1):
+        row = [
+            str(index),
+            student.reg_no,
+            Paragraph(student.name, body_style),
+        ]
+
         for subject in subjects:
-            total_hours = calculate_total_hours(subject.id, student.semester.id, student.department.id)
-            attended_hours = student_attendance_hours(student.id, subject.id)
-            attendance_percentage = (attended_hours / total_hours * 100) if total_hours > 0 else 0
+            total_hours = calculate_total_hours(
+                subject.id,
+                student.semester.id,
+                student.department.id,
+            )
 
-            row.extend([str(total_hours), str(attended_hours), f"{attendance_percentage:.2f}%"])
+            attended_hours = student_attendance_hours(
+                student.id,
+                subject.id,
+            )
+
+            percentage = (
+                (attended_hours / total_hours) * 100
+                if total_hours > 0 else 0
+            )
+
+            # Color percentage text
+            percent_color = "green" if percentage >= 75 else "red"
+
+            percent_para = Paragraph(
+                f'<font color="{percent_color}">'
+                f'{percentage:.1f}%'
+                f'</font>',
+                body_style,
+            )
+
+            row.extend([
+                str(total_hours),
+                str(attended_hours),
+                percent_para,
+            ])
 
         data.append(row)
 
-    # ** Adjust Column Widths for 8 Subjects **
-    col_widths = [90, 70] + ([22, 22, 25] * len(subjects))  # Even smaller width to fit 8 subjects
+    # ------------------------------------------------------------------
+    # Column Widths
+    # ------------------------------------------------------------------
+    # Total usable width in landscape letter ≈ 770 points
+    # Fixed columns:
+    # Sl No       = 30
+    # Reg No      = 80
+    # Name        = 130
+    # Remaining for subjects
+    fixed_width = 30 + 80 + 130
+    remaining = 770 - fixed_width
 
+    subject_col_width = remaining / (len(subjects) * 3) if subjects else 20
+
+    col_widths = [30, 80, 130]
+
+    for _ in subjects:
+        col_widths.extend([
+            subject_col_width,
+            subject_col_width,
+            subject_col_width,
+        ])
+
+    # ------------------------------------------------------------------
     # Create Table
-    table = Table(data, colWidths=col_widths)
+    # ------------------------------------------------------------------
+    table = Table(
+        data,
+        colWidths=col_widths,
+        repeatRows=2,
+    )
 
-    # ** Apply Styling **
+    # ------------------------------------------------------------------
+    # Table Style
+    # ------------------------------------------------------------------
     style = TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.blue),  # Header 1
-        ("BACKGROUND", (0, 1), (-1, 1), colors.lightgrey),  # Header 2
-        ("TEXTCOLOR", (0, 0), (-1, 1), colors.black),
-        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-        ("FONTNAME", (0, 0), (-1, 1), "Helvetica-Bold"),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 3),
-        ("GRID", (0, 0), (-1, -1), 1, colors.black),
-        ("FONTSIZE", (0, 0), (-1, -1), 6),  # Smaller font to fit more data
+        # Header backgrounds
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a8a')),
+        ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#dbeafe')),
+
+        # Header text color
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, 1), colors.black),
+
+        # Fonts
+        ('FONTNAME', (0, 0), (-1, 1), 'Helvetica-Bold'),
+
+        # Alignment
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+
+        # Grid
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+
+        # Padding
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+
+        # Font size
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+
+        # Alternate row colors
+        ('ROWBACKGROUNDS', (0, 2), (-1, -1),
+         [colors.white, colors.whitesmoke]),
     ])
 
-    # ** Merge Subject Names Across 3 Columns **
-    col_start = 2  # First subject starts at column 2
+    # ------------------------------------------------------------------
+    # Merge Subject Headers
+    # ------------------------------------------------------------------
+    col = 3
     for _ in subjects:
-        style.add("SPAN", (col_start, 0), (col_start + 2, 0))  # Merge subject name across 3 columns
-        col_start += 3  # Move to next subject's columns
+        style.add('SPAN', (col, 0), (col + 2, 0))
+        col += 3
+
+    # Merge first three header columns vertically
+    style.add('SPAN', (0, 0), (0, 1))
+    style.add('SPAN', (1, 0), (1, 1))
+    style.add('SPAN', (2, 0), (2, 1))
 
     table.setStyle(style)
+
     elements.append(table)
 
-    # Generate PDF
-    pdf.build(elements)
+    # ------------------------------------------------------------------
+    # Build PDF
+    # ------------------------------------------------------------------
+    doc.build(elements)
 
     return response
-
-
-
 
 # attendance/views.py
 
