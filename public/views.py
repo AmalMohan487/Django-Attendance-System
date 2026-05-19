@@ -455,17 +455,16 @@ def over(request):
 
 def download_attendance_report(request, department_id, semester_id):
     """
-    Professional attendance report PDF.
+    Generate a professional PDF attendance report.
 
     Features:
     - Landscape orientation
-    - Supports up to 8 subjects (24 sub-columns)
-    - Multi-row subject headers
-    - Repeating header on each page
+    - Supports up to 8 subjects
+    - Multi-row headers (TH, AH, %)
+    - Soft professional colors
+    - Proper alignment
     - Alternating row colors
-    - Color-coded attendance percentage:
-        < 75%  -> Red
-        >=75%  -> Green
+    - Percentage shown in red (<75%) and green (>=75%)
     """
 
     from django.http import HttpResponse
@@ -478,18 +477,24 @@ def download_attendance_report(request, department_id, semester_id):
     )
     from reportlab.lib.pagesizes import landscape, letter
     from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.styles import (
+        getSampleStyleSheet,
+        ParagraphStyle,
+    )
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
     from reportlab.lib.units import inch
 
+    # ==========================================================
+    # HTTP Response
+    # ==========================================================
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = (
         'attachment; filename="attendance_report.pdf"'
     )
 
-    # ------------------------------------------------------------------
+    # ==========================================================
     # PDF Document Setup
-    # ------------------------------------------------------------------
+    # ==========================================================
     doc = SimpleDocTemplate(
         response,
         pagesize=landscape(letter),
@@ -502,9 +507,9 @@ def download_attendance_report(request, department_id, semester_id):
     elements = []
     styles = getSampleStyleSheet()
 
-    # ------------------------------------------------------------------
+    # ==========================================================
     # Custom Styles
-    # ------------------------------------------------------------------
+    # ==========================================================
     title_style = ParagraphStyle(
         'TitleStyle',
         parent=styles['Title'],
@@ -527,6 +532,7 @@ def download_attendance_report(request, department_id, semester_id):
         parent=styles['BodyText'],
         fontSize=7,
         leading=8,
+        alignment=TA_LEFT,
     )
 
     header_style = ParagraphStyle(
@@ -537,9 +543,9 @@ def download_attendance_report(request, department_id, semester_id):
         alignment=TA_CENTER,
     )
 
-    # ------------------------------------------------------------------
+    # ==========================================================
     # Fetch Data
-    # ------------------------------------------------------------------
+    # ==========================================================
     department = Department.objects.get(id=department_id)
     semester = Semester.objects.get(id=semester_id)
 
@@ -551,11 +557,11 @@ def download_attendance_report(request, department_id, semester_id):
     subjects = Subject.objects.filter(
         department_id=department_id,
         semester_id=semester_id
-    ).order_by('name')[:8]   # Max 8 subjects
+    ).order_by('name')[:8]  # Maximum 8 subjects
 
-    # ------------------------------------------------------------------
-    # Title
-    # ------------------------------------------------------------------
+    # ==========================================================
+    # Title Section
+    # ==========================================================
     elements.append(
         Paragraph("Student Attendance Report", title_style)
     )
@@ -576,9 +582,9 @@ def download_attendance_report(request, department_id, semester_id):
 
     elements.append(Spacer(1, 0.15 * inch))
 
-    # ------------------------------------------------------------------
+    # ==========================================================
     # No Data Case
-    # ------------------------------------------------------------------
+    # ==========================================================
     if not students.exists():
         elements.append(
             Paragraph("No students found.", styles['BodyText'])
@@ -586,22 +592,24 @@ def download_attendance_report(request, department_id, semester_id):
         doc.build(elements)
         return response
 
-    # ------------------------------------------------------------------
-    # Table Headers
-    # ------------------------------------------------------------------
+    # ==========================================================
+    # Header Row 1
+    # ==========================================================
     header_row_1 = [
         Paragraph("<b>Sl No</b>", header_style),
         Paragraph("<b>Reg No</b>", header_style),
         Paragraph("<b>Student Name</b>", header_style),
     ]
 
-    # Subject names spanning 3 columns each
     for subject in subjects:
         header_row_1.append(
             Paragraph(f"<b>{subject.name}</b>", header_style)
         )
         header_row_1.extend(["", ""])
 
+    # ==========================================================
+    # Header Row 2
+    # ==========================================================
     header_row_2 = ["", "", ""]
 
     for _ in subjects:
@@ -613,13 +621,13 @@ def download_attendance_report(request, department_id, semester_id):
 
     data = [header_row_1, header_row_2]
 
-    # ------------------------------------------------------------------
+    # ==========================================================
     # Student Rows
-    # ------------------------------------------------------------------
+    # ==========================================================
     for index, student in enumerate(students, start=1):
         row = [
             str(index),
-            student.reg_no,
+            Paragraph(student.reg_no, body_style),
             Paragraph(student.name, body_style),
         ]
 
@@ -640,14 +648,16 @@ def download_attendance_report(request, department_id, semester_id):
                 if total_hours > 0 else 0
             )
 
-            # Color percentage text
-            percent_color = "green" if percentage >= 75 else "red"
+            # Professional color palette
+            percent_color = (
+                "#15803D" if percentage >= 75 else "#DC2626"
+            )
 
             percent_para = Paragraph(
                 f'<font color="{percent_color}">'
                 f'{percentage:.1f}%'
                 f'</font>',
-                body_style,
+                header_style,
             )
 
             row.extend([
@@ -658,94 +668,97 @@ def download_attendance_report(request, department_id, semester_id):
 
         data.append(row)
 
-    # ------------------------------------------------------------------
-    # Column Widths
-    # ------------------------------------------------------------------
-    # Total usable width in landscape letter ≈ 770 points
-    # Fixed columns:
-    # Sl No       = 30
-    # Reg No      = 80
-    # Name        = 130
-    # Remaining for subjects
-    fixed_width = 30 + 80 + 130
-    remaining = 770 - fixed_width
+    # ==========================================================
+    # Column Width Calculation
+    # ==========================================================
+    fixed_width = 30 + 90 + 150
+    usable_width = 770  # Approx width in landscape letter
+    remaining_width = usable_width - fixed_width
 
-    subject_col_width = remaining / (len(subjects) * 3) if subjects else 20
+    if subjects:
+        sub_col_width = remaining_width / (len(subjects) * 3)
+    else:
+        sub_col_width = 20
 
-    col_widths = [30, 80, 130]
+    col_widths = [30, 90, 150]
 
     for _ in subjects:
         col_widths.extend([
-            subject_col_width,
-            subject_col_width,
-            subject_col_width,
+            sub_col_width,
+            sub_col_width,
+            sub_col_width,
         ])
 
-    # ------------------------------------------------------------------
+    # ==========================================================
     # Create Table
-    # ------------------------------------------------------------------
+    # ==========================================================
     table = Table(
         data,
         colWidths=col_widths,
         repeatRows=2,
     )
 
-    # ------------------------------------------------------------------
+    # ==========================================================
     # Table Style
-    # ------------------------------------------------------------------
+    # ==========================================================
     style = TableStyle([
-        # Header backgrounds
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a8a')),
-        ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#dbeafe')),
+        # Header row colors (soft colors)
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#DCE6F1')),
+        ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#F3F4F6')),
 
-        # Header text color
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, 1), colors.black),
-
-        # Fonts
+        # Header text
+        ('TEXTCOLOR', (0, 0), (-1, 1), colors.black),
         ('FONTNAME', (0, 0), (-1, 1), 'Helvetica-Bold'),
 
         # Alignment
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
 
+        # Left align Reg No and Student Name
+        ('ALIGN', (1, 2), (2, -1), 'LEFT'),
+
         # Grid
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
 
         # Padding
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('LEFTPADDING', (0, 0), (-1, -1), 2),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
 
         # Font size
         ('FONTSIZE', (0, 0), (-1, -1), 7),
 
-        # Alternate row colors
-        ('ROWBACKGROUNDS', (0, 2), (-1, -1),
-         [colors.white, colors.whitesmoke]),
+        # Alternating row colors
+        ('ROWBACKGROUNDS', (0, 2), (-1, -1), [
+            colors.white,
+            colors.HexColor('#FAFAFA')
+        ]),
     ])
 
-    # ------------------------------------------------------------------
-    # Merge Subject Headers
-    # ------------------------------------------------------------------
+    # ==========================================================
+    # Merge Subject Headers Across 3 Columns
+    # ==========================================================
     col = 3
     for _ in subjects:
         style.add('SPAN', (col, 0), (col + 2, 0))
         col += 3
 
-    # Merge first three header columns vertically
+    # Merge fixed header columns vertically
     style.add('SPAN', (0, 0), (0, 1))
     style.add('SPAN', (1, 0), (1, 1))
     style.add('SPAN', (2, 0), (2, 1))
 
     table.setStyle(style)
 
+    # ==========================================================
+    # Add Table to PDF
+    # ==========================================================
     elements.append(table)
 
-    # ------------------------------------------------------------------
+    # ==========================================================
     # Build PDF
-    # ------------------------------------------------------------------
+    # ==========================================================
     doc.build(elements)
 
     return response
