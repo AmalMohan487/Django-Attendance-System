@@ -576,60 +576,104 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 
+from django.http import HttpResponse
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+)
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+import traceback
+
 
 def download_low_attendance_pdf(request):
-    from attendance.utils import get_low_attendance_report_data
+    try:
+        from attendance.utils import get_low_attendance_report_data
 
-    report_data = get_low_attendance_report_data()
+        report_data = get_low_attendance_report_data()
 
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = (
-        'attachment; filename="low_attendance_report.pdf"'
-    )
-
-    doc = SimpleDocTemplate(
-        response,
-        pagesize=A4,
-        rightMargin=40,
-        leftMargin=40,
-        topMargin=40,
-        bottomMargin=40,
-    )
-
-    styles = getSampleStyleSheet()
-    story = []
-
-    story.append(Paragraph('Low Attendance Report', styles['Title']))
-    story.append(Spacer(1, 0.2 * inch))
-
-    if not report_data:
-        story.append(
-            Paragraph('No students with attendance below 75%.', styles['BodyText'])
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = (
+            'attachment; filename="low_attendance_report.pdf"'
         )
-    else:
-        for dept in report_data:
+
+        doc = SimpleDocTemplate(
+            response,
+            pagesize=A4,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=40,
+            bottomMargin=40,
+        )
+
+        styles = getSampleStyleSheet()
+        story = []
+
+        # Title
+        story.append(
+            Paragraph("Low Attendance Report", styles['Title'])
+        )
+        story.append(Spacer(1, 0.2 * inch))
+
+        if not report_data:
             story.append(
                 Paragraph(
-                    f"<b>Department: {dept['department']}</b>",
-                    styles['Heading2'],
+                    "No students with attendance below 75%.",
+                    styles['BodyText']
                 )
             )
-            story.append(Spacer(1, 0.1 * inch))
-
-            for student in dept['students']:
-                lines = [
-                    f"<b>{student['name']}</b> "
-                    f"({student['reg_no']}) - Semester {student['semester']}"
-                ]
-
-                for subject in student['subjects']:
-                    lines.append(
-                        f"• {subject['subject']} - {subject['percentage']}%"
+        else:
+            for dept in report_data:
+                # Department heading
+                story.append(
+                    Paragraph(
+                        f"<b>Department: {dept['department']}</b>",
+                        styles['Heading1']
                     )
+                )
+                story.append(Spacer(1, 0.1 * inch))
 
-                paragraph = Paragraph('<br/>'.join(lines), styles['BodyText'])
-                story.append(KeepTogether([paragraph]))
-                story.append(Spacer(1, 0.15 * inch))
+                for sem in dept['semesters']:
+                    # Semester heading
+                    story.append(
+                        Paragraph(
+                            f"<b>Semester: {sem['semester']}</b>",
+                            styles['Heading2']
+                        )
+                    )
+                    story.append(Spacer(1, 0.1 * inch))
 
-    doc.build(story)
-    return response
+                    for student in sem['students']:
+                        text = (
+                            f"<b>{student['name']}</b> "
+                            f"({student['reg_no']})"
+                        )
+
+                        story.append(
+                            Paragraph(text, styles['BodyText'])
+                        )
+
+                        for subject in student['subjects']:
+                            subject_text = (
+                                f"• {subject['subject']} - "
+                                f"{subject['percentage']}%"
+                            )
+                            story.append(
+                                Paragraph(
+                                    subject_text,
+                                    styles['BodyText']
+                                )
+                            )
+
+                        story.append(Spacer(1, 0.1 * inch))
+
+        doc.build(story)
+        return response
+
+    except Exception:
+        return HttpResponse(
+            "<h1>PDF Generation Error</h1>"
+            "<pre>" + traceback.format_exc() + "</pre>"
+        )
