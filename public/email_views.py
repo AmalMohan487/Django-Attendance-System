@@ -1,45 +1,80 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import timedelta
 import traceback
 
+from public.models import AutomationSettings
 
-@login_required
+
+def should_run_automation(settings_obj):
+    """
+    Returns True if the automation should run now.
+    """
+
+    if not settings_obj.is_enabled:
+        return False
+
+    now = timezone.localtime()
+    current_time = now.time()
+
+    # Current time must be >= configured run time
+    if current_time < settings_obj.run_time:
+        return False
+
+    # Never run before
+    if not settings_obj.last_run_at:
+        return True
+
+    last_run = timezone.localtime(settings_obj.last_run_at)
+
+    if settings_obj.frequency == 'daily':
+        return last_run.date() < now.date()
+
+    elif settings_obj.frequency == 'weekly':
+        return last_run.isocalendar()[1] < now.isocalendar()[1] \
+               or last_run.year < now.year
+
+    elif settings_obj.frequency == 'monthly':
+        return (
+            last_run.year < now.year
+            or last_run.month < now.month
+        )
+
+    return False
+
+
+
 def generate_report_and_send_alerts(request):
     try:
-        # ======================================================
-        # CHECK WHETHER AUTOMATION IS ENABLED
-        # ======================================================
-        from public.models import AutomationSettings
+        settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
 
-        settings_obj = AutomationSettings.objects.first()
+        # Automation disabled
+        if not settings_obj.is_enabled:
+            return HttpResponse('Automation is disabled.')
 
-        if not settings_obj or not settings_obj.is_enabled:
-            return HttpResponse("Automation is currently disabled.")
+        # Not scheduled to run yet
+        if not should_run_automation(settings_obj):
+            return HttpResponse('No automation needed at this time.')
 
-        # ======================================================
-        # IMPORT FUNCTIONS
-        # ======================================================
+        # Import utilities
         from attendance.utils import (
             check_and_send_attendance_warnings,
             check_and_send_teacher_attendance_warnings,
             get_low_attendance_report_data,
         )
 
-        # ======================================================
-        # SEND EMAILS
-        # ======================================================
+        # Send emails
         student_count = check_and_send_attendance_warnings()
         teacher_count = check_and_send_teacher_attendance_warnings()
 
-        # ======================================================
-        # GET REPORT DATA
-        # ======================================================
+        # Update last run time
+        settings_obj.last_run_at = timezone.now()
+        settings_obj.save()
+
+        # Report data
         report_data = get_low_attendance_report_data()
 
-        # ======================================================
-        # SHOW REPORT PAGE
-        # ======================================================
         return render(
             request,
             'public/attendance_report.html',
@@ -52,5 +87,5 @@ def generate_report_and_send_alerts(request):
 
     except Exception:
         return HttpResponse(
-            "<pre>" + traceback.format_exc() + "</pre>"
+            '<pre>' + traceback.format_exc() + '</pre>'
         )

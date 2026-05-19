@@ -54,7 +54,10 @@ class AutomationSettings(models.Model):
 
     run_time = models.TimeField(default='08:00')
 
+    # Prevent duplicate execution
+    last_run_at = models.DateTimeField(null=True, blank=True)
+
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return 'Automation Settings' 
+        return 'Automation Settings'

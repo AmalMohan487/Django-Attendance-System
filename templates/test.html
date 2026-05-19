@@ -1,30 +1,28 @@
-# Automation Settings Modal (Admin Dashboard)
+# Full Automatic Attendance Email System (Complete Code)
 
-This design is exactly the right approach.
+This document contains the full code required to implement **true automatic attendance email alerts**.
 
-## Final UX Flow
+## What This System Does
 
-1. Admin clicks **Settings** in the navbar.
-2. A modal (floating popup) opens.
-3. Admin can:
-
-   * Enable/Disable automation.
-   * Select frequency (Daily / Weekly / Monthly).
-   * Choose run time.
-4. Click **Save Settings**.
-5. Scheduled job checks these settings before sending emails.
+* Admin enables/disables automation from the Settings modal.
+* Admin selects Daily / Weekly / Monthly.
+* Admin selects the execution time.
+* Render Scheduled Job calls the automation URL every 15 minutes.
+* Django checks whether the task should run.
+* Emails are sent automatically.
+* Duplicate runs in the same period are prevented.
 
 ---
 
-# 1. Create Model: `public/models.py`
+# 1. `public/models.py`
 
-Add this model at the bottom of `public/models.py`.
+Add this model at the end of `public/models.py`.
 
 ```python
 
 ```
 
-Run migrations:
+Run:
 
 ```bash
 python manage.py makemigrations
@@ -33,7 +31,7 @@ python manage.py migrate
 
 ---
 
-# 2. Create Form: `public/forms.py`
+# 2. `public/forms.py`
 
 ```python
 
@@ -41,52 +39,27 @@ python manage.py migrate
 
 ---
 
-# 3. Create View: `public/views.py`
+# 3. `public/views.py`
 
-Add this view.
+## Save Automation Settings
 
 ```python
-from django.shortcuts import redirect
-from django.contrib import messages
-from .models import AutomationSettings
-from .forms import AutomationSettingsForm
 
-
-def save_automation_settings(request):
-    if request.method == 'POST':
-        settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
-        form = AutomationSettingsForm(request.POST, instance=settings_obj)
-
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Automation settings saved successfully.')
-        else:
-            messages.error(request, 'Please correct the form errors.')
-
-    return redirect('AdminIndex')
 ```
 
----
+## Update `AdminIndex`
 
-# 4. Update Dashboard View (`AdminIndex`)
-
-In your existing `AdminIndex` view, add:
+In your `AdminIndex` view, add:
 
 ```python
 from .models import AutomationSettings
 from .forms import AutomationSettingsForm
 
 
-def AdminIndex(request):
-    settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
-    automation_form = AutomationSettingsForm(instance=settings_obj)
-
-    return render(request, 'public/AdminIndex.html', {
-        'automation_form': automation_form,
-    })
+    return render(request, 'public/AdminIndex.html', context)
 ```
 
-If your view already sends context, simply add:
+If you already have a context dictionary, just add:
 
 ```python
 context['automation_form'] = automation_form
@@ -94,7 +67,9 @@ context['automation_form'] = automation_form
 
 ---
 
-# 5. Add URL: `public/urls.py`
+# 4. `public/urls.py`
+
+Add this URL:
 
 ```python
 path(
@@ -106,220 +81,106 @@ path(
 
 ---
 
-# 6. Update `AdminIndex.html`
+# 5. `public/email_views.py`
 
-Your current dashboard template is in the uploaded file fileciteturn19file0.
+Replace the existing `generate_report_and_send_alerts()` with this complete version.
 
-## A. Add Settings Link to Navbar
+```python
 
-Inside `<ul class="nav-links">`, add:
-
-```html
-<li>
-    <a href="#" onclick="openSettingsModal(); return false;">
-        <i class="fas fa-cog"></i> Settings
-    </a>
-</li>
 ```
 
 ---
 
-## B. Add Modal HTML (before `</body>`)
+# 6. Render Scheduled Job Setup
 
-```html
-<!-- Settings Modal -->
-<div id="settingsModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeSettingsModal()">&times;</span>
+Create a Scheduled Job in Render.
 
-        <h2>Automation Settings</h2>
+## URL
 
-        <form method="POST" action="{% url 'save_automation_settings' %}">
-            {% csrf_token %}
-
-            <div class="form-group checkbox-group">
-                <label>
-                    {{ automation_form.is_enabled }}
-                    Enable Automation
-                </label>
-            </div>
-
-            <div id="automationOptions">
-                <div class="form-group">
-                    <label>Frequency</label>
-                    {{ automation_form.frequency }}
-                </div>
-
-                <div class="form-group">
-                    <label>Run Time</label>
-                    {{ automation_form.run_time }}
-                </div>
-            </div>
-
-            <button type="submit" class="save-btn">
-                Save Settings
-            </button>
-        </form>
-    </div>
-</div>
+```text
+https://django-attendance-system-gudk.onrender.com/generate-report-and-send-alerts/
 ```
+
+## Frequency
+
+Every 15 minutes.
+
+Render can call the URL frequently. Django decides whether to actually send emails.
 
 ---
 
-## C. Add CSS (inside `<style>`)
+# 7. How It Works
 
-```css
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 2000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-}
+Example settings:
 
-.modal-content {
-    background: #fff;
-    width: 90%;
-    max-width: 500px;
-    margin: 80px auto;
-    padding: 30px;
-    border-radius: 12px;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
+* Enable Automation = True
+* Frequency = Weekly
+* Run Time = 07:50 PM
 
-.close {
-    position: absolute;
-    right: 20px;
-    top: 15px;
-    font-size: 28px;
-    cursor: pointer;
-}
+Render calls every 15 minutes.
 
-.form-group {
-    margin-bottom: 20px;
-}
+### Monday 07:50 PM
 
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-}
+* Emails sent.
+* `last_run_at` updated.
 
-.form-group select,
-.form-group input[type="time"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-}
+### Monday 08:00 PM
 
-.checkbox-group label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+* No duplicate email.
 
-.save-btn {
-    width: 100%;
-    padding: 12px;
-    background: #15599c;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: pointer;
-}
+### Next Monday 07:50 PM
 
-.save-btn:hover {
-    background: #0f4477;
-}
-```
+* Emails sent again.
 
 ---
 
-## D. Add JavaScript (before `</body>`)
+# 8. Optional: Reset for Testing
 
-```html
-<script>
-function openSettingsModal() {
-    document.getElementById('settingsModal').style.display = 'block';
-    toggleAutomationOptions();
-}
-
-function closeSettingsModal() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
-function toggleAutomationOptions() {
-    const checkbox = document.getElementById('id_is_enabled');
-    const options = document.getElementById('automationOptions');
-
-    if (!checkbox || !options) return;
-
-    options.style.display = checkbox.checked ? 'block' : 'none';
-}
-
-window.addEventListener('DOMContentLoaded', function () {
-    const checkbox = document.getElementById('id_is_enabled');
-
-    if (checkbox) {
-        checkbox.addEventListener('change', toggleAutomationOptions);
-        toggleAutomationOptions();
-    }
-}
-
-window.onclick = function(event) {
-    const modal = document.getElementById('settingsModal');
-    if (event.target === modal) {
-        closeSettingsModal();
-    }
-}
-</script>
-```
-
----
-
-# 7. Update Scheduled Endpoint Logic
-
-In your automation endpoint:
+In Django shell:
 
 ```python
 from public.models import AutomationSettings
-
-settings_obj = AutomationSettings.objects.first()
-
-if not settings_obj or not settings_obj.is_enabled:
-    return HttpResponse('Automation is disabled.')
+s = AutomationSettings.objects.first()
+s.last_run_at = None
+s.save()
 ```
 
-Later, you can also compare `frequency` and `run_time` if you want more precise control.
+This allows the automation to run immediately on the next call.
 
 ---
 
-# Final Result
+# 9. Test Steps
 
-The Admin Dashboard will have a **Settings** button.
+1. Open Settings modal.
+2. Enable Automation.
+3. Set Frequency = Daily.
+4. Set Run Time = a few minutes before current time.
+5. Save.
+6. Visit:
 
-When clicked:
+```text
+/generate-report-and-send-alerts/
+```
 
-* A floating popup opens.
-* Admin can turn automation ON/OFF.
-* If ON, frequency and time options appear.
-* Settings are saved to the database.
-
-Your scheduled Render job will read these settings and decide whether to send emails.
+If conditions are met, emails will be sent.
 
 ---
 
-# My Recommendation
+# 10. Final Architecture
 
-This modal-based settings approach is the cleanest solution.
+* `AutomationSettings` model stores configuration.
+* Settings modal lets admin control automation.
+* Render Scheduled Job calls the endpoint.
+* Django decides whether to run.
+* Duplicate execution is prevented.
 
-* No extra page required.
-* Minimal UI changes.
-* Professional user experience.
-* Perfect for a demo project.
+---
+
+# Result
+
+You now have a complete cloud-based automated attendance alert system where:
+
+* Admin controls everything.
+* Emails are sent automatically.
+* Duplicate emails are prevented.
+* No manual button press is required.

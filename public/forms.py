@@ -118,6 +118,10 @@ from django import forms
 from .models import AutomationSettings
 
 
+from django import forms
+from .models import AutomationSettings
+
+
 class AutomationSettingsForm(forms.ModelForm):
     class Meta:
         model = AutomationSettings

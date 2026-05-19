@@ -28,13 +28,16 @@ def homepage(request):
     return render(request, 'index.html')
 
 @admin_required
+
 def AdminIndex(request):
-    
     settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
     automation_form = AutomationSettingsForm(instance=settings_obj)
-    return render(request,'admin/adminindex.html',{
+
+    context = {
         'automation_form': automation_form,
-    })
+    }
+
+    return render(request,'admin/adminindex.html',context)
 
 
 def SignIn(request):
@@ -937,6 +940,12 @@ from .models import AutomationSettings
 from .forms import AutomationSettingsForm
 
 
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import AutomationSettings
+from .forms import AutomationSettingsForm
+
+
 def save_automation_settings(request):
     if request.method == 'POST':
         settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
@@ -946,6 +955,6 @@ def save_automation_settings(request):
             form.save()
             messages.success(request, 'Automation settings saved successfully.')
         else:
-            messages.error(request, 'Please correct the form errors.')
+            messages.error(request, 'Invalid settings.')
 
     return redirect('AdminIndex')
