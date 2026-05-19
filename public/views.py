@@ -565,6 +565,9 @@ def download_attendance_report(request, department_id, semester_id):
     elements.append(
         Paragraph("Student Attendance Report", title_style)
     )
+    elements.append(
+    Paragraph("Student Attendance Report - VERSION 2", title_style)
+)
 
     elements.append(
         Paragraph(
