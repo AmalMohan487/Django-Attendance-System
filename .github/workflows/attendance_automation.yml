@@ -1,0 +1,16 @@
+name: Attendance Automation
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Attendance Automation
+        run: |
+          curl -L https://django-attendance-system-gudk.onrender.com/generate-report-and-send-alerts/
