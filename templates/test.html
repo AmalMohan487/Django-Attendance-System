@@ -1,21 +1,39 @@
-# Build Attendance Report Page + Download PDF
+# Automation Settings Modal (Admin Dashboard)
 
-This guide adds the next feature to your Attendance Management System:
+This design is exactly the right approach.
 
-## Workflow
+## Final UX Flow
 
-When the admin clicks **Generate Report and Send Alerts**:
+1. Admin clicks **Settings** in the navbar.
+2. A modal (floating popup) opens.
+3. Admin can:
 
-1. Student and teacher low-attendance emails are sent.
-2. Admin is redirected to a report page.
-3. The report page shows grouped low-attendance data.
-4. A **Download PDF** button lets the admin download the report.
+   * Enable/Disable automation.
+   * Select frequency (Daily / Weekly / Monthly).
+   * Choose run time.
+4. Click **Save Settings**.
+5. Scheduled job checks these settings before sending emails.
 
 ---
 
-# Step 1: Add Report Data Function to `attendance/utils.py`
+# 1. Create Model: `public/models.py`
 
-Add this function at the bottom of `attendance/utils.py`.
+Add this model at the bottom of `public/models.py`.
+
+```python
+
+```
+
+Run migrations:
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+---
+
+# 2. Create Form: `public/forms.py`
 
 ```python
 
@@ -23,193 +41,285 @@ Add this function at the bottom of `attendance/utils.py`.
 
 ---
 
-# Step 2: Update `public/email_views.py`
+# 3. Create View: `public/views.py`
 
-Replace the entire file with:
-
-```python
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-import traceback
-
-
-@login_required
-def generate_report_and_send_alerts(request):
-    try:
-        from attendance.utils import (
-            check_and_send_attendance_warnings,
-            check_and_send_teacher_attendance_warnings,
-            get_low_attendance_report_data,
-        )
-
-        student_count = check_and_send_attendance_warnings()
-        teacher_count = check_and_send_teacher_attendance_warnings()
-
-        report_data = get_low_attendance_report_data()
-
-        return render(request, 'public/attendance_report.html', {
-            'report_data': report_data,
-            'student_count': student_count,
-            'teacher_count': teacher_count,
-        })
-
-    except Exception:
-        return HttpResponse(
-            '<pre>' + traceback.format_exc() + '</pre>'
-        )
-```
-
----
-
-# Step 3: Create Template
-
-Create:
-
-```text
-public/templates/public/attendance_report.html
-```
-
-Paste:
-
-```html
-
-```
-
----
-
-# Step 4: Add PDF Download View to `public/views.py`
-
-Add this function to `public/views.py`.
+Add this view.
 
 ```python
-from django.http import HttpResponse
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-)
-from reportlab.platypus.flowables import KeepTogether
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import AutomationSettings
+from .forms import AutomationSettingsForm
 
 
-def download_low_attendance_pdf(request):
-    from attendance.utils import get_low_attendance_report_data
+def save_automation_settings(request):
+    if request.method == 'POST':
+        settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
+        form = AutomationSettingsForm(request.POST, instance=settings_obj)
 
-    report_data = get_low_attendance_report_data()
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Automation settings saved successfully.')
+        else:
+            messages.error(request, 'Please correct the form errors.')
 
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = (
-        'attachment; filename="low_attendance_report.pdf"'
-    )
-
-    doc = SimpleDocTemplate(
-        response,
-        pagesize=A4,
-        rightMargin=40,
-        leftMargin=40,
-        topMargin=40,
-        bottomMargin=40,
-    )
-
-    styles = getSampleStyleSheet()
-    story = []
-
-    story.append(Paragraph('Low Attendance Report', styles['Title']))
-    story.append(Spacer(1, 0.2 * inch))
-
-    if not report_data:
-        story.append(
-            Paragraph('No students with attendance below 75%.', styles['BodyText'])
-        )
-    else:
-        for dept in report_data:
-            story.append(
-                Paragraph(
-                    f"<b>Department: {dept['department']}</b>",
-                    styles['Heading2'],
-                )
-            )
-            story.append(Spacer(1, 0.1 * inch))
-
-            for student in dept['students']:
-                lines = [
-                    f"<b>{student['name']}</b> "
-                    f"({student['reg_no']}) - Semester {student['semester']}"
-                ]
-
-                for subject in student['subjects']:
-                    lines.append(
-                        f"• {subject['subject']} - {subject['percentage']}%"
-                    )
-
-                paragraph = Paragraph('<br/>'.join(lines), styles['BodyText'])
-                story.append(KeepTogether([paragraph]))
-                story.append(Spacer(1, 0.15 * inch))
-
-    doc.build(story)
-    return response
+    return redirect('AdminIndex')
 ```
 
 ---
 
-# Step 5: Update `public/urls.py`
+# 4. Update Dashboard View (`AdminIndex`)
 
-Add this URL pattern:
+In your existing `AdminIndex` view, add:
+
+```python
+from .models import AutomationSettings
+from .forms import AutomationSettingsForm
+
+
+def AdminIndex(request):
+    settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
+    automation_form = AutomationSettingsForm(instance=settings_obj)
+
+    return render(request, 'public/AdminIndex.html', {
+        'automation_form': automation_form,
+    })
+```
+
+If your view already sends context, simply add:
+
+```python
+context['automation_form'] = automation_form
+```
+
+---
+
+# 5. Add URL: `public/urls.py`
 
 ```python
 path(
-    'download-low-attendance-pdf/',
-    views.download_low_attendance_pdf,
-    name='download_low_attendance_pdf'
+    'save-automation-settings/',
+    views.save_automation_settings,
+    name='save_automation_settings'
 ),
 ```
 
 ---
 
-# Step 6: Install ReportLab
+# 6. Update `AdminIndex.html`
 
-Add to `requirements.txt` if not already present:
+Your current dashboard template is in the uploaded file fileciteturn19file0.
 
-```text
-reportlab==4.4.1
+## A. Add Settings Link to Navbar
+
+Inside `<ul class="nav-links">`, add:
+
+```html
+<li>
+    <a href="#" onclick="openSettingsModal(); return false;">
+        <i class="fas fa-cog"></i> Settings
+    </a>
+</li>
 ```
 
 ---
 
-# Step 7: Commit and Push
+## B. Add Modal HTML (before `</body>`)
 
-```bash
-git add attendance/utils.py public/email_views.py public/views.py public/urls.py requirements.txt
-git commit -m "Add attendance report page and PDF download"
-git push origin main
+```html
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeSettingsModal()">&times;</span>
+
+        <h2>Automation Settings</h2>
+
+        <form method="POST" action="{% url 'save_automation_settings' %}">
+            {% csrf_token %}
+
+            <div class="form-group checkbox-group">
+                <label>
+                    {{ automation_form.is_enabled }}
+                    Enable Automation
+                </label>
+            </div>
+
+            <div id="automationOptions">
+                <div class="form-group">
+                    <label>Frequency</label>
+                    {{ automation_form.frequency }}
+                </div>
+
+                <div class="form-group">
+                    <label>Run Time</label>
+                    {{ automation_form.run_time }}
+                </div>
+            </div>
+
+            <button type="submit" class="save-btn">
+                Save Settings
+            </button>
+        </form>
+    </div>
+</div>
 ```
 
 ---
 
-# Final Workflow
+## C. Add CSS (inside `<style>`)
 
-When admin clicks:
+```css
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
 
-```text
-Generate Report and Send Alerts
+.modal-content {
+    background: #fff;
+    width: 90%;
+    max-width: 500px;
+    margin: 80px auto;
+    padding: 30px;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.form-group select,
+.form-group input[type="time"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 12px;
+    background: #15599c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.save-btn:hover {
+    background: #0f4477;
+}
 ```
-
-The system will:
-
-1. Send emails.
-2. Show grouped report page.
-3. Display a Download PDF button.
-4. Allow optional PDF download.
 
 ---
 
-# Expected Result
+## D. Add JavaScript (before `</body>`)
 
-* Emails sent to low-attendance students and teachers.
-* Admin sees report immediately.
-* Student appears only once.
-* Multiple low-attendance subjects appear under the same student.
-* PDF can be downloaded when needed.
+```html
+<script>
+function openSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'block';
+    toggleAutomationOptions();
+}
+
+function closeSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+function toggleAutomationOptions() {
+    const checkbox = document.getElementById('id_is_enabled');
+    const options = document.getElementById('automationOptions');
+
+    if (!checkbox || !options) return;
+
+    options.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+    const checkbox = document.getElementById('id_is_enabled');
+
+    if (checkbox) {
+        checkbox.addEventListener('change', toggleAutomationOptions);
+        toggleAutomationOptions();
+    }
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('settingsModal');
+    if (event.target === modal) {
+        closeSettingsModal();
+    }
+}
+</script>
+```
+
+---
+
+# 7. Update Scheduled Endpoint Logic
+
+In your automation endpoint:
+
+```python
+from public.models import AutomationSettings
+
+settings_obj = AutomationSettings.objects.first()
+
+if not settings_obj or not settings_obj.is_enabled:
+    return HttpResponse('Automation is disabled.')
+```
+
+Later, you can also compare `frequency` and `run_time` if you want more precise control.
+
+---
+
+# Final Result
+
+The Admin Dashboard will have a **Settings** button.
+
+When clicked:
+
+* A floating popup opens.
+* Admin can turn automation ON/OFF.
+* If ON, frequency and time options appear.
+* Settings are saved to the database.
+
+Your scheduled Render job will read these settings and decide whether to send emails.
+
+---
+
+# My Recommendation
+
+This modal-based settings approach is the cleanest solution.
+
+* No extra page required.
+* Minimal UI changes.
+* Professional user experience.
+* Perfect for a demo project.

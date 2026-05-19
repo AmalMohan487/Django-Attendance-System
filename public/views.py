@@ -12,7 +12,7 @@ from subject.models import Subject
 from attendance.models import Attendance
 
 # Forms
-from .forms import StudentLoginForm, TeacherLoginForm, DepartmentForm, SemesterForm
+from .forms import AutomationSettingsForm, StudentLoginForm, TeacherLoginForm, DepartmentForm, SemesterForm
 
 # Decorators
 from .decorators import student_required, teacher_required, admin_required
@@ -29,7 +29,13 @@ def homepage(request):
 
 @admin_required
 def AdminIndex(request):
-    return render(request,'admin/adminindex.html')
+    
+    settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
+    automation_form = AutomationSettingsForm(instance=settings_obj)
+    return render(request,'admin/adminindex.html',{
+        'automation_form': automation_form,
+    })
+
 
 def SignIn(request):
     if request.method == "POST":
@@ -922,3 +928,24 @@ def download_low_attendance_pdf(request):
 
     doc.build(story)
     return response
+
+
+
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import AutomationSettings
+from .forms import AutomationSettingsForm
+
+
+def save_automation_settings(request):
+    if request.method == 'POST':
+        settings_obj, _ = AutomationSettings.objects.get_or_create(id=1)
+        form = AutomationSettingsForm(request.POST, instance=settings_obj)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Automation settings saved successfully.')
+        else:
+            messages.error(request, 'Please correct the form errors.')
+
+    return redirect('AdminIndex')

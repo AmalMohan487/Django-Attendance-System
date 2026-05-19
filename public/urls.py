@@ -28,6 +28,11 @@ urlpatterns = [
     views.download_low_attendance_pdf,
     name='download_low_attendance_pdf'
 ),
+    path(
+    'save-automation-settings/',
+    views.save_automation_settings,
+    name='save_automation_settings'
+),
 path(
     'generate-report-and-send-alerts/',
     generate_report_and_send_alerts,

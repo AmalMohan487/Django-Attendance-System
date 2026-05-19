@@ -1,3 +1,8 @@
+# Full Corrected `public/templates/public/AdminIndex.html`
+
+This is the complete updated Admin Dashboard template based on your uploaded file fileciteturn20file0 with an integrated **Automation Settings modal**.
+
+```html
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -6,11 +11,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
 
-    <!-- Font Awesome (Local Static) -->
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.css' %}">
 
     <style>
-        /* Reset and General Styles */
         * {
             margin: 0;
             padding: 0;
@@ -46,6 +49,7 @@
         .nav-links {
             list-style: none;
             display: flex;
+            align-items: center;
         }
 
         .nav-links li {
@@ -70,8 +74,8 @@
             align-items: center;
             padding: 20px;
             background-color: rgba(238, 247, 255, 0.925);
-            margin-top: 70px; /* Offset for navbar */
-            margin-bottom: 50px; /* Offset for footer */
+            margin-top: 70px;
+            margin-bottom: 50px;
         }
 
         /* Grid Container */
@@ -109,7 +113,6 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
         }
 
         .list i {
@@ -122,7 +125,6 @@
             transform: scale(1.05);
         }
 
-        /* Hover Text */
         .list span {
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
@@ -146,17 +148,141 @@
             font-size: 14px;
         }
 
-        /* Responsive: 2 Columns */
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: #fff;
+            width: 100%;
+            max-width: 500px;
+            margin: 80px auto;
+            padding: 30px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #15599c;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-group select,
+        .form-group input[type="time"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .save-btn {
+            width: 100%; 
+            padding: 12px;
+            background: #15599c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .save-btn:hover {
+            background: #0f4477;
+        }
+
+        /* Django messages */
+        .messages {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 3000;
+            width: 320px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .message.success {
+            background: #16a34a;
+        }
+
+        .message.error {
+            background: #dc2626;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
             .cont {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .nav-links li {
+                margin-right: 15px;
+            }
         }
 
-        /* Responsive: 1 Column */
         @media (max-width: 500px) {
             .cont {
-                grid-template-columns: repeat(1, 1fr);
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                padding: 10px;
+            }
+
+            .nav-links a {
+                font-size: 14px;
+            }
+
+            .modal-content {
+                margin: 40px auto;
+                padding: 20px;
             }
         }
     </style>
@@ -167,15 +293,26 @@
     <nav class="navbar">
         <div class="logo">
             <img src="{% static 'images/logo.png' %}" alt="AMBR Logo">
-        </div>     
+        </div>
+
         <ul class="nav-links">
             <li><a href="{% url 'AdminIndex' %}">Home</a></li>
-            <li><a href="{% url 'over' %}">End Semester </a></li>
+            <li><a href="#" onclick="openSettingsModal(); return false;"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="{% url 'over' %}">End Semester</a></li>
             <li><a href="{% url 'user_logout' %}">Logout</a></li>
         </ul>
     </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     {% block content %}
-    <!-- Main Content -->
     <div class="main-content">
         <div class="cont">
             <a href="{% url 'Dept' %}">
@@ -184,30 +321,35 @@
                     <span>Department</span>
                 </div>
             </a>
+
             <a href="{% url 'view_students' %}">
                 <div class="list">
                     <i class="fas fa-user-graduate"></i>
                     <span>Students</span>
                 </div>
             </a>
+
             <a href="{% url 'admin_view_teachers' %}">
                 <div class="list">
                     <i class="fas fa-chalkboard-teacher"></i>
                     <span>Teachers</span>
                 </div>
             </a>
+
             <a href="{% url 'subject_list' %}">
                 <div class="list">
                     <i class="fas fa-book"></i>
                     <span>Subjects</span>
                 </div>
             </a>
+
             <a href="{% url 'attendance_report_center' %}">
                 <div class="list">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Attendance Report</span>
                 </div>
-            </a>  
+            </a>
+
             <a href="{% url 'Asub' %}">
                 <div class="list">
                     <i class="fas fa-tasks"></i>
@@ -217,10 +359,91 @@
         </div>
     </div>
     {% endblock %}
+
+    <!-- Automation Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSettingsModal()">&times;</span>
+
+            <h2>Automation Settings</h2>
+
+            <form method="POST" action="{% url 'save_automation_settings' %}">
+                {% csrf_token %}
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        {{ automation_form.is_enabled }}
+                        Enable Automation
+                    </label>
+                </div>
+
+                <div id="automationOptions">
+                    <div class="form-group">
+                        <label for="id_frequency">Frequency</label>
+                        {{ automation_form.frequency }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_run_time">Run Time</label>
+                        {{ automation_form.run_time }}
+                    </div>
+                </div>
+
+                <button type="submit" class="save-btn">
+                    Save Settings
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer>
         <p>&copy; 2025 Attendance Management System</p>
     </footer>
 
+    <script>
+        function openSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'block';
+            toggleAutomationOptions();
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function toggleAutomationOptions() {
+            const checkbox = document.getElementById('id_is_enabled');
+            const options = document.getElementById('automationOptions');
+
+            if (!checkbox || !options) return;
+
+            options.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const checkbox = document.getElementById('id_is_enabled');
+
+            if (checkbox) {
+                checkbox.addEventListener('change', toggleAutomationOptions);
+                toggleAutomationOptions();
+            }
+
+            // Auto-hide messages after 4 seconds
+            setTimeout(function() {
+                document.querySelectorAll('.message').forEach(function(msg) {
+                    msg.style.display = 'none';
+                });
+            }, 4000);
+        });
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('settingsModal');
+            if (event.target === modal) {
+                closeSettingsModal();
+            }
+        }
+    </script>
+
 </body>
 </html>
+```

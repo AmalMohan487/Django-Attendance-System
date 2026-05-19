@@ -112,3 +112,16 @@ class StudentLoginForm(forms.Form):
 class TeacherLoginForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': 'Email'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Password'}))
+
+
+from django import forms
+from .models import AutomationSettings
+
+
+class AutomationSettingsForm(forms.ModelForm):
+    class Meta:
+        model = AutomationSettings
+        fields = ['is_enabled', 'frequency', 'run_time']
+        widgets = {
+            'run_time': forms.TimeInput(attrs={'type': 'time'}),
+        }
